@@ -6,13 +6,15 @@ import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../auth/AuthContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { Menu } from '../components/Menu';
+import { MenuButton } from '../components/MenuButton';
 import { useTheme } from '../theme/ThemeContext';
 import { getAppStyles, getColors, spacing } from '../style/appStyles';
 import { getUserProfile, saveUserProfile, UserProfile } from '../data/profileStore';
 
 export default function ProfileScreen() {
   const { session } = useContext(AuthContext);
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const colors = getColors(theme);
   const styles = getAppStyles(colors);
   const navigation = useNavigation();
@@ -22,6 +24,7 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile>({ firstName: '', lastName: '', profilePicture: null });
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     if (session?.userId) {
@@ -65,6 +68,47 @@ export default function ProfileScreen() {
   }
 
   async function handlePickImage() {
+    Alert.alert(
+      'Select Photo',
+      'Choose an option',
+      [
+        {
+          text: 'Camera',
+          onPress: handleTakePhoto,
+        },
+        {
+          text: 'Photo Library',
+          onPress: handlePickFromLibrary,
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
+    );
+  }
+
+  async function handleTakePhoto() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'We need access to your camera to take a photo.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setProfile({ ...profile, profilePicture: result.assets[0].uri });
+    }
+  }
+
+  async function handlePickFromLibrary() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission needed', 'We need access to your photos to set a profile picture.');
@@ -100,30 +144,46 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.screen}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg }}>
-          <Text style={styles.title}>Profile</Text>
-          {!isEditing ? (
+    <>
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 8, paddingBottom: 4 }}>
+          <MenuButton onPress={() => setMenuVisible(true)} />
+          <Text style={styles.title}>CashFlow</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <Pressable
-              onPress={() => setIsEditing(true)}
-              style={{ padding: spacing.xs }}
+              onPress={toggleTheme}
+              style={{ padding: spacing.xs, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text style={[styles.body, { color: colors.accent }]}>Edit</Text>
+              <Image
+                source={theme === 'dark' ? require('../../assets/images/DarkLogo.png') : require('../../assets/images/LightLogo.png')}
+                style={{ width: 44, height: 44 }}
+                resizeMode="contain"
+              />
             </Pressable>
-          ) : (
-            <Pressable
-              onPress={handleCancel}
-              style={{ padding: spacing.xs }}
-            >
-              <Text style={[styles.body, { color: colors.muted }]}>Cancel</Text>
-            </Pressable>
-          )}
+            {!isEditing ? (
+              <Pressable
+                onPress={() => setIsEditing(true)}
+                style={{ padding: spacing.xs, minWidth: 32 }}
+              >
+                <Text style={[styles.body, { color: colors.accent }]}>Edit</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={handleCancel}
+                style={{ padding: spacing.xs, minWidth: 32 }}
+              >
+                <Text style={[styles.body, { color: colors.muted }]}>Cancel</Text>
+              </Pressable>
+            )}
+          </View>
         </View>
+
+        <View style={styles.screen}>
 
         <ScrollView contentContainerStyle={{ paddingBottom: spacing.lg }} showsVerticalScrollIndicator={false}>
           <View style={styles.card}>
             <View style={{ alignItems: 'center', marginBottom: spacing.lg }}>
+              <Text style={[styles.h2, { marginBottom: spacing.md }]}>Profile</Text>
               <Pressable
                 onPress={isEditing ? handlePickImage : undefined}
                 disabled={!isEditing}
@@ -165,7 +225,7 @@ export default function ProfileScreen() {
               )}
             </View>
 
-            <Text style={styles.h2}>Account Information</Text>
+            <Text style={[styles.h2, { textAlign: 'center' }]}>Account Information</Text>
 
             {isEditing ? (
               <>
@@ -192,7 +252,7 @@ export default function ProfileScreen() {
               <>
                 {profile.firstName || profile.lastName ? (
                   <>
-                    <View style={{ marginTop: spacing.md }}>
+                    <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
                       <Text style={styles.muted}>Name</Text>
                       <Text style={[styles.body, { marginTop: 4 }]}>
                         {[profile.firstName, profile.lastName].filter(Boolean).join(' ') || 'Not set'}
@@ -203,14 +263,14 @@ export default function ProfileScreen() {
               </>
             )}
 
-            <View style={{ marginTop: spacing.md }}>
+            <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
               <Text style={styles.muted}>Username</Text>
               <Text style={[styles.body, { marginTop: 4, opacity: 0.6 }]}>
                 {session?.userId || 'Not available'}
               </Text>
             </View>
 
-            <View style={{ marginTop: spacing.md }}>
+            <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
               <Text style={styles.muted}>Email</Text>
               <Text style={[styles.body, { marginTop: 4, opacity: 0.6 }]}>
                 {session?.email || 'Not available'}
@@ -218,7 +278,7 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {isEditing ? (
+          {isEditing && (
             <View style={{ marginTop: spacing.md }}>
               <Button
                 title="Save Changes"
@@ -228,17 +288,11 @@ export default function ProfileScreen() {
                 variant="success"
               />
             </View>
-          ) : (
-            <View style={{ marginTop: spacing.md }}>
-              <Button
-                title="Back to Home"
-                onPress={() => navigation.navigate('Home')}
-                variant="outline"
-              />
-            </View>
           )}
         </ScrollView>
-      </View>
-    </SafeAreaView>
+        </View>
+      </SafeAreaView>
+      <Menu visible={menuVisible} onClose={() => setMenuVisible(false)} />
+    </>
   );
 }

@@ -51,13 +51,11 @@ export function Menu({ visible, onClose }: MenuProps) {
           onStartShouldSetResponder={() => true}
         >
           <View style={[menuStyles.header, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.title, { fontSize: 20 }]}>Menu</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+              <Text style={[menuStyles.wordmarkCash, { color: colors.text }]}>Cash</Text>
+              <Text style={[menuStyles.wordmarkFlow, { color: colors.text }]}>Flow</Text>
+            </View>
             <View style={menuStyles.headerRight}>
-              <Image 
-                source={require('../../assets/images/Cashflow.png')} 
-                style={menuStyles.logo}
-                resizeMode="contain"
-              />
               <Pressable onPress={onClose} style={menuStyles.closeButton}>
                 <Text style={[styles.body, { fontSize: 20 }]}>✕</Text>
               </Pressable>
@@ -71,11 +69,11 @@ export function Menu({ visible, onClose }: MenuProps) {
                 { borderBottomColor: colors.border },
               ]}
               onPress={() => {
-                navigation.navigate('Profile');
+                navigation.navigate('Home');
                 onClose();
               }}
             >
-              <Text style={[styles.body, { flex: 1 }]}>Profile</Text>
+              <Text style={[styles.body, { flex: 1 }]}>Dashboard</Text>
             </Pressable>
 
             <Pressable
@@ -84,15 +82,11 @@ export function Menu({ visible, onClose }: MenuProps) {
                 { borderBottomColor: colors.border },
               ]}
               onPress={() => {
-                toggleTheme();
+                navigation.navigate('Profile');
+                onClose();
               }}
             >
-              <Text style={[styles.body, { flex: 1 }]}>
-                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-              </Text>
-              <Text style={[styles.muted, { fontSize: 20 }]}>
-                {theme === 'dark' ? '☀️' : '🌙'}
-              </Text>
+              <Text style={[styles.body, { flex: 1 }]}>Profile</Text>
             </Pressable>
 
             <Pressable
@@ -153,5 +147,16 @@ const menuStyles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.lg,
     borderBottomWidth: 1,
+  },
+  wordmarkCash: {
+    fontSize: 22,
+    fontWeight: '200',
+    letterSpacing: 4,
+  },
+  wordmarkFlow: {
+    fontSize: 22,
+    fontWeight: '300',
+    letterSpacing: 4,
+    marginLeft: 2,
   },
 });
