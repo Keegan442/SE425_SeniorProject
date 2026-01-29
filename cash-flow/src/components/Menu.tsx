@@ -31,7 +31,6 @@ export function Menu({ visible, onClose }: MenuProps) {
         useNativeDriver: true,
       }).start();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   return (
