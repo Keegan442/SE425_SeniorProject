@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { View, Text, Pressable, Modal, StyleSheet, Animated, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { getColors, getAppStyles, spacing } from '../style/appStyles';
 import { AuthContext } from '../auth/AuthContext';
@@ -12,6 +13,7 @@ interface MenuProps {
 export function Menu({ visible, onClose }: MenuProps) {
   const { theme, toggleTheme } = useTheme();
   const { signOut } = useContext(AuthContext);
+  const navigation = useNavigation();
   const colors = getColors(theme);
   const styles = getAppStyles(colors);
   const [slideAnim] = useState(new Animated.Value(-300));
@@ -63,6 +65,19 @@ export function Menu({ visible, onClose }: MenuProps) {
           </View>
 
           <View style={menuStyles.content}>
+            <Pressable
+              style={[
+                menuStyles.menuItem,
+                { borderBottomColor: colors.border },
+              ]}
+              onPress={() => {
+                navigation.navigate('Profile');
+                onClose();
+              }}
+            >
+              <Text style={[styles.body, { flex: 1 }]}>Profile</Text>
+            </Pressable>
+
             <Pressable
               style={[
                 menuStyles.menuItem,

@@ -10,6 +10,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ModalScreen from './src/screens/ModalScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -28,6 +29,7 @@ function AppStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Modal" component={ModalScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
     </Stack.Navigator>
   );
 }
