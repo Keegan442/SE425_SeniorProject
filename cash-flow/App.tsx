@@ -11,6 +11,10 @@ import SignUpScreen from './src/screens/SignUpScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ModalScreen from './src/screens/ModalScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import DownloadsScreen from './src/screens/DownloadsScreen';
+import BudgetsScreen from './src/screens/BudgetsScreen';
+import SubscriptionsScreen from './src/screens/SubscriptionsScreen';
+import TransactionsScreen from './src/screens/TransactionsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,6 +34,10 @@ function AppStack() {
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Modal" component={ModalScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Downloads" component={DownloadsScreen} />
+      <Stack.Screen name="Budgets" component={BudgetsScreen} />
+      <Stack.Screen name="Subscriptions" component={SubscriptionsScreen} />
+      <Stack.Screen name="Transactions" component={TransactionsScreen} />
     </Stack.Navigator>
   );
 }

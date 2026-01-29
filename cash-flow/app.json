@@ -4,6 +4,9 @@
     "slug": "cash-flow",
     "version": "1.0.0",
     "orientation": "portrait",
+    "updates": {
+      "enabled": false
+    },
     "icon": "./assets/images/DarkLogo.png",
     "scheme": "cashflow",
     "userInterfaceStyle": "automatic",

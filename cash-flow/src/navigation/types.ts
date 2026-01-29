@@ -5,12 +5,15 @@ export type RootStackParamList = {
   Home: undefined;
   Modal: undefined;
   Profile: undefined;
+  Downloads: undefined;
+  Budgets: undefined;
+  Subscriptions: undefined;
+  Transactions: undefined;
 };
 
 declare global {
   namespace ReactNavigation {
-    // Makes `useNavigation()` and `navigation.navigate(...)` strongly typed
-    // across the app without needing generics everywhere.
+
     interface RootParamList extends RootStackParamList {}
   }
 }
