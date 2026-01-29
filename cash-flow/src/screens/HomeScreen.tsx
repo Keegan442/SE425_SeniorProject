@@ -5,7 +5,8 @@ import { AuthContext } from '../auth/AuthContext';
 import { Menu } from '../components/Menu';
 import { MenuButton } from '../components/MenuButton';
 import { useTheme } from '../theme/ThemeContext';
-import { getAppStyles, getColors, spacing } from '../style/appStyles';
+import { getAppStyles, getColors } from '../style/appStyles';
+import { useCurrency } from '../theme/CurrencyContext';
 import { monthKey } from '../utils/date';
 import { getMonthData } from '../data/budgetStore';
 import { sumExpenses } from '../data/budgetMath';
@@ -13,6 +14,7 @@ import { sumExpenses } from '../data/budgetMath';
 export default function HomeScreen() {
   const { session } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
+  const { formatAmount } = useCurrency();
   const colors = getColors(theme);
   const styles = getAppStyles(colors);
   const [income, setIncome] = useState(0);
@@ -49,16 +51,13 @@ export default function HomeScreen() {
   return (
     <>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 8, paddingBottom: 4 }}>
+        <View style={styles.screenHeaderRow}>
           <MenuButton onPress={() => setMenuVisible(true)} />
           <Text style={styles.title}>CashFlow</Text>
-          <Pressable
-            onPress={toggleTheme}
-            style={{ padding: spacing.xs, minWidth: 32, alignItems: 'center', justifyContent: 'center' }}
-          >
+          <Pressable onPress={toggleTheme} style={styles.themeToggleButton}>
             <Image
               source={theme === 'dark' ? require('../../assets/images/DarkLogo.png') : require('../../assets/images/LightLogo.png')}
-              style={{ width: 44, height: 44 }}
+              style={styles.logoImage}
               resizeMode="contain"
             />
           </Pressable>
@@ -67,30 +66,24 @@ export default function HomeScreen() {
         <View style={styles.screen}>
           <View style={styles.cardTight}>
             <Text style={styles.smallMuted}>This month</Text>
-            <View style={{ marginTop: spacing.sm }}>
-              <Text style={styles.bigMoney}>
-                ${typeof remaining === 'number' && !isNaN(remaining) ? remaining.toFixed(2) : '0.00'}
-              </Text>
+            <View style={styles.marginTopSm}>
+              <Text style={styles.bigMoney}>{formatAmount(remaining)}</Text>
             </View>
-            <View style={{ marginTop: spacing.sm }}>
+            <View style={styles.marginTopSm}>
               <Text style={styles.muted}>Remaining balance</Text>
             </View>
 
             <View style={styles.rowTopSpaced}>
-              <View style={[styles.pill, { marginRight: spacing.md }]}>
+              <View style={[styles.pill, styles.pillRight]}>
                 <Text style={styles.smallMuted}>Income</Text>
-                <View style={{ marginTop: 6 }}>
-                  <Text style={styles.h2}>
-                    ${typeof income === 'number' && !isNaN(income) ? income.toFixed(2) : '0.00'}
-                  </Text>
+                <View style={styles.marginTopPill}>
+                  <Text style={styles.h2}>{formatAmount(income)}</Text>
                 </View>
               </View>
               <View style={styles.pill}>
                 <Text style={styles.smallMuted}>Spent</Text>
-                <View style={{ marginTop: 6 }}>
-                  <Text style={styles.h2}>
-                    ${typeof spent === 'number' && !isNaN(spent) ? spent.toFixed(2) : '0.00'}
-                  </Text>
+                <View style={styles.marginTopPill}>
+                  <Text style={styles.h2}>{formatAmount(spent)}</Text>
                 </View>
               </View>
             </View>

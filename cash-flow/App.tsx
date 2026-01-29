@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { ThemeProvider } from './src/theme/ThemeContext';
+import { CurrencyProvider } from './src/theme/CurrencyContext';
 import type { RootStackParamList } from './src/navigation/types';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -57,7 +58,11 @@ function RootNavigator() {
     return <LoadingScreen />;
   }
 
-  return session ? <AppStack /> : <AuthStack />;
+  return (
+    <CurrencyProvider>
+      {session ? <AppStack /> : <AuthStack />}
+    </CurrencyProvider>
+  );
 }
 
 export default function App() {

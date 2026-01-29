@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Menu } from '../components/Menu';
 import { MenuButton } from '../components/MenuButton';
 import { useTheme } from '../theme/ThemeContext';
-import { getAppStyles, getColors, spacing } from '../style/appStyles';
+import { getAppStyles, getColors } from '../style/appStyles';
 
 export default function TransactionsScreen() {
   const { theme, toggleTheme } = useTheme();
@@ -15,26 +15,23 @@ export default function TransactionsScreen() {
   return (
     <>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 8, paddingBottom: 4 }}>
+        <View style={styles.screenHeaderRow}>
           <MenuButton onPress={() => setMenuVisible(true)} />
           <Text style={styles.title}>Transactions</Text>
-          <Pressable
-            onPress={toggleTheme}
-            style={{ padding: spacing.xs, minWidth: 32, alignItems: 'center', justifyContent: 'center' }}
-          >
+          <Pressable onPress={toggleTheme} style={styles.themeToggleButton}>
             <Image
               source={theme === 'dark' ? require('../../assets/images/DarkLogo.png') : require('../../assets/images/LightLogo.png')}
-              style={{ width: 44, height: 44 }}
+              style={styles.logoImage}
               resizeMode="contain"
             />
           </Pressable>
         </View>
 
         <View style={styles.screen}>
-          <ScrollView contentContainerStyle={{ paddingBottom: spacing.lg }} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={styles.scrollContentBottom} showsVerticalScrollIndicator={false}>
             <View style={styles.card}>
               <Text style={styles.h2}>Transactions</Text>
-              <Text style={[styles.muted, { marginTop: spacing.md }]}>Your transactions will appear here</Text>
+              <Text style={[styles.muted, styles.marginTopMd]}>Your transactions will appear here</Text>
             </View>
           </ScrollView>
         </View>

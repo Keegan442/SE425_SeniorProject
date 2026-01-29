@@ -64,6 +64,41 @@ export function getAppStyles(themeColors: Colors) {
     headerRow: { flexDirection: 'row', alignItems: 'center' },
     pushBottom: { flex: 1 },
 
+    // Screen header (burger, title, theme toggle)
+    screenHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingTop: 8,
+      paddingBottom: 4,
+    },
+    headerRightRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    themeToggleButton: {
+      padding: spacing.xs,
+      minWidth: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    editButton: { padding: spacing.xs, minWidth: 32 },
+    logoImage: { width: 44, height: 44 },
+
+    // Scroll
+    scrollContentBottom: { paddingBottom: spacing.lg },
+
+    // Spacing
+    marginTopSm: { marginTop: spacing.sm },
+    marginTopMd: { marginTop: spacing.md },
+    marginTopPill: { marginTop: 6 },
+    formFieldMargin: { marginTop: spacing.md },
+    labelMarginBottom: { marginBottom: 8 },
+
+    // Center blocks
+    centerBlock: { alignItems: 'center' },
+    centerBlockMargin: { alignItems: 'center', marginBottom: spacing.lg },
+    centerBlockMarginTop: { marginTop: spacing.md, alignItems: 'center' },
+    screenCenter: { justifyContent: 'center', alignItems: 'center' },
+
     card: {
       borderColor: themeColors.border,
       borderWidth: 1,
@@ -86,16 +121,61 @@ export function getAppStyles(themeColors: Colors) {
       borderRadius: 14,
       padding: spacing.md,
     },
+    pillRight: { marginRight: spacing.md },
     row: { flexDirection: 'row' },
     rowTopSpaced: { flexDirection: 'row', marginTop: spacing.md },
     spacerSm: { height: spacing.sm },
 
+    // Profile / shared
+    profileAvatar: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: themeColors.card,
+      borderWidth: 2,
+      borderColor: themeColors.border,
+    },
+    profileAvatarPlaceholder: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: themeColors.card,
+      borderWidth: 2,
+      borderColor: themeColors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    currencyRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    currencyChip: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      backgroundColor: themeColors.card,
+    },
+    currencyChipSelected: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: themeColors.accent,
+      backgroundColor: themeColors.accent + '20',
+    },
+
     // Text Styles
     title: { fontSize: 26, fontWeight: '700', color: themeColors.text },
     h2: { fontSize: 18, fontWeight: '700', color: themeColors.text },
+    h2Center: { fontSize: 18, fontWeight: '700', color: themeColors.text, textAlign: 'center' },
+    h2Large: { fontSize: 40, fontWeight: '700', color: themeColors.text },
     body: { fontSize: 16, fontWeight: '500', color: themeColors.text },
+    bodyTop4: { marginTop: 4 },
+    bodyTop4Muted: { marginTop: 4, opacity: 0.6 },
+    bodyAccent: { fontSize: 16, fontWeight: '500', color: themeColors.accent },
+    bodyMuted: { fontSize: 16, fontWeight: '500', color: themeColors.muted },
     muted: { fontSize: 16, fontWeight: '500', color: themeColors.muted },
     smallMuted: { fontSize: 13, fontWeight: '500', color: themeColors.muted },
+    smallMutedTop: { fontSize: 13, fontWeight: '500', color: themeColors.muted, marginTop: spacing.xs },
     footnote: { color: themeColors.muted, fontSize: 12, flex: 1 },
     smallMutedTop2: { fontSize: 13, fontWeight: '500', color: themeColors.muted, marginTop: 2 },
     bigMoney: { fontSize: 44, fontWeight: '800', color: themeColors.text, letterSpacing: -0.5 },

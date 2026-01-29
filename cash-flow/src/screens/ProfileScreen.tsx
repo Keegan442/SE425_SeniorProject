@@ -9,21 +9,26 @@ import { Input } from '../components/Input';
 import { Menu } from '../components/Menu';
 import { MenuButton } from '../components/MenuButton';
 import { useTheme } from '../theme/ThemeContext';
-import { getAppStyles, getColors, spacing } from '../style/appStyles';
+import { getAppStyles, getColors } from '../style/appStyles';
 import { getUserProfile, saveUserProfile, UserProfile } from '../data/profileStore';
+import { useCurrency } from '../theme/CurrencyContext';
+import { CURRENCIES, CURRENCY_OPTIONS } from '../utils/currency';
 
 export default function ProfileScreen() {
   const { session } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
+  const { refreshCurrency } = useCurrency();
   const colors = getColors(theme);
   const styles = getAppStyles(colors);
   const navigation = useNavigation();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<UserProfile>({ firstName: '', lastName: '', profilePicture: null });
+  const [profile, setProfile] = useState<UserProfile>({ firstName: '', lastName: '', profilePicture: null, birthday: null, currency: 'USD' });
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [birthday, setBirthday] = useState('');
+  const [currency, setCurrency] = useState('USD');
   const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
@@ -40,6 +45,8 @@ export default function ProfileScreen() {
       setProfile(userProfile);
       setFirstName(userProfile.firstName);
       setLastName(userProfile.lastName);
+      setBirthday(userProfile.birthday ?? '');
+      setCurrency(userProfile.currency ?? 'USD');
     } catch (error) {
       Alert.alert('Error', 'Failed to load profile');
     } finally {
@@ -55,10 +62,13 @@ export default function ProfileScreen() {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         profilePicture: profile.profilePicture,
+        birthday: birthday.trim() || null,
+        currency: currency || 'USD',
       };
       await saveUserProfile(session.userId, updatedProfile);
       setProfile(updatedProfile);
       setIsEditing(false);
+      await refreshCurrency();
       Alert.alert('Success', 'Profile updated successfully');
     } catch (error) {
       Alert.alert('Error', 'Failed to save profile');
@@ -130,13 +140,15 @@ export default function ProfileScreen() {
   function handleCancel() {
     setFirstName(profile.firstName);
     setLastName(profile.lastName);
+    setBirthday(profile.birthday ?? '');
+    setCurrency(profile.currency ?? 'USD');
     setIsEditing(false);
   }
 
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+        <View style={[styles.screen, styles.screenCenter]}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
       </SafeAreaView>
@@ -146,33 +158,24 @@ export default function ProfileScreen() {
   return (
     <>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 8, paddingBottom: 4 }}>
+        <View style={styles.screenHeaderRow}>
           <MenuButton onPress={() => setMenuVisible(true)} />
           <Text style={styles.title}>CashFlow</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <Pressable
-              onPress={toggleTheme}
-              style={{ padding: spacing.xs, alignItems: 'center', justifyContent: 'center' }}
-            >
+          <View style={styles.headerRightRow}>
+            <Pressable onPress={toggleTheme} style={styles.themeToggleButton}>
               <Image
                 source={theme === 'dark' ? require('../../assets/images/DarkLogo.png') : require('../../assets/images/LightLogo.png')}
-                style={{ width: 44, height: 44 }}
+                style={styles.logoImage}
                 resizeMode="contain"
               />
             </Pressable>
             {!isEditing ? (
-              <Pressable
-                onPress={() => setIsEditing(true)}
-                style={{ padding: spacing.xs, minWidth: 32 }}
-              >
-                <Text style={[styles.body, { color: colors.accent }]}>Edit</Text>
+              <Pressable onPress={() => setIsEditing(true)} style={styles.editButton}>
+                <Text style={styles.bodyAccent}>Edit</Text>
               </Pressable>
             ) : (
-              <Pressable
-                onPress={handleCancel}
-                style={{ padding: spacing.xs, minWidth: 32 }}
-              >
-                <Text style={[styles.body, { color: colors.muted }]}>Cancel</Text>
+              <Pressable onPress={handleCancel} style={styles.editButton}>
+                <Text style={styles.bodyMuted}>Cancel</Text>
               </Pressable>
             )}
           </View>
@@ -180,10 +183,10 @@ export default function ProfileScreen() {
 
         <View style={styles.screen}>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: spacing.lg }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scrollContentBottom} showsVerticalScrollIndicator={false}>
           <View style={styles.card}>
-            <View style={{ alignItems: 'center', marginBottom: spacing.lg }}>
-              <Text style={[styles.h2, { marginBottom: spacing.md }]}>Profile</Text>
+            <View style={styles.centerBlockMargin}>
+              <Text style={[styles.h2, styles.labelMarginBottom]}>Profile</Text>
               <Pressable
                 onPress={isEditing ? handlePickImage : undefined}
                 disabled={!isEditing}
@@ -192,44 +195,26 @@ export default function ProfileScreen() {
                 {profile.profilePicture ? (
                   <Image
                     source={{ uri: profile.profilePicture }}
-                    style={{
-                      width: 100,
-                      height: 100,
-                      borderRadius: 50,
-                      backgroundColor: colors.card,
-                      borderWidth: 2,
-                      borderColor: colors.border,
-                    }}
+                    style={styles.profileAvatar}
                   />
                 ) : (
-                  <View
-                    style={{
-                      width: 100,
-                      height: 100,
-                      borderRadius: 50,
-                      backgroundColor: colors.card,
-                      borderWidth: 2,
-                      borderColor: colors.border,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text style={[styles.h2, { fontSize: 40 }]}>
+                  <View style={styles.profileAvatarPlaceholder}>
+                    <Text style={styles.h2Large}>
                       {profile.firstName?.[0]?.toUpperCase() || profile.lastName?.[0]?.toUpperCase() || '?'}
                     </Text>
                   </View>
                 )}
               </Pressable>
               {isEditing && (
-                <Text style={[styles.smallMuted, { marginTop: spacing.xs }]}>Tap to change</Text>
+                <Text style={styles.smallMutedTop}>Tap to change</Text>
               )}
             </View>
 
-            <Text style={[styles.h2, { textAlign: 'center' }]}>Account Information</Text>
+            <Text style={styles.h2Center}>Account Information</Text>
 
             {isEditing ? (
               <>
-                <View style={{ marginTop: spacing.md }}>
+                <View style={styles.formFieldMargin}>
                   <Input
                     label="First Name"
                     value={firstName}
@@ -238,7 +223,7 @@ export default function ProfileScreen() {
                     autoCapitalize="words"
                   />
                 </View>
-                <View style={{ marginTop: spacing.md }}>
+                <View style={styles.formFieldMargin}>
                   <Input
                     label="Last Name"
                     value={lastName}
@@ -247,39 +232,73 @@ export default function ProfileScreen() {
                     autoCapitalize="words"
                   />
                 </View>
+                <View style={styles.formFieldMargin}>
+                  <Input
+                    label="Birthday"
+                    value={birthday}
+                    onChangeText={setBirthday}
+                    placeholder="YYYY-MM-DD"
+                  />
+                </View>
+                <View style={styles.formFieldMargin}>
+                  <Text style={[styles.muted, styles.labelMarginBottom]}>Currency</Text>
+                  <View style={styles.currencyRow}>
+                    {CURRENCY_OPTIONS.map((code) => (
+                      <Pressable
+                        key={code}
+                        onPress={() => setCurrency(code)}
+                        style={currency === code ? styles.currencyChipSelected : styles.currencyChip}
+                      >
+                        <Text style={[styles.body, currency === code && styles.bodyAccent]}>
+                          {code} {CURRENCIES[code]}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
               </>
             ) : (
               <>
                 {profile.firstName || profile.lastName ? (
-                  <>
-                    <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
-                      <Text style={styles.muted}>Name</Text>
-                      <Text style={[styles.body, { marginTop: 4 }]}>
-                        {[profile.firstName, profile.lastName].filter(Boolean).join(' ') || 'Not set'}
-                      </Text>
-                    </View>
-                  </>
+                  <View style={styles.centerBlockMarginTop}>
+                    <Text style={styles.muted}>Name</Text>
+                    <Text style={[styles.body, styles.bodyTop4]}>
+                      {[profile.firstName, profile.lastName].filter(Boolean).join(' ') || 'Not set'}
+                    </Text>
+                  </View>
                 ) : null}
+                {(profile.birthday ?? '').trim() ? (
+                  <View style={styles.centerBlockMarginTop}>
+                    <Text style={styles.muted}>Birthday</Text>
+                    <Text style={[styles.body, styles.bodyTop4]}>{profile.birthday}</Text>
+                  </View>
+                ) : null}
+                <View style={styles.centerBlockMarginTop}>
+                  <Text style={styles.muted}>Currency</Text>
+                  <Text style={[styles.body, styles.bodyTop4]}>
+                    {profile.currency ?? 'USD'} {CURRENCIES[profile.currency ?? 'USD']}
+                  </Text>
+                </View>
               </>
             )}
 
-            <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
+            <View style={styles.centerBlockMarginTop}>
               <Text style={styles.muted}>Username</Text>
-              <Text style={[styles.body, { marginTop: 4, opacity: 0.6 }]}>
+              <Text style={[styles.body, styles.bodyTop4Muted]}>
                 {session?.userId || 'Not available'}
               </Text>
             </View>
 
-            <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
+            <View style={styles.centerBlockMarginTop}>
               <Text style={styles.muted}>Email</Text>
-              <Text style={[styles.body, { marginTop: 4, opacity: 0.6 }]}>
+              <Text style={[styles.body, styles.bodyTop4Muted]}>
                 {session?.email || 'Not available'}
               </Text>
             </View>
           </View>
 
           {isEditing && (
-            <View style={{ marginTop: spacing.md }}>
+            <View style={styles.formFieldMargin}>
               <Button
                 title="Save Changes"
                 onPress={handleSave}

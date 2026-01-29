@@ -82,37 +82,11 @@ export function Menu({ visible, onClose }: MenuProps) {
                 { borderBottomColor: colors.border },
               ]}
               onPress={() => {
-                navigation.navigate('Profile');
+                navigation.navigate('Transactions');
                 onClose();
               }}
             >
-              <Text style={[styles.body, { flex: 1 }]}>Profile</Text>
-            </Pressable>
-
-            <Pressable
-              style={[
-                menuStyles.menuItem,
-                { borderBottomColor: colors.border },
-              ]}
-              onPress={() => {
-                navigation.navigate('Downloads');
-                onClose();
-              }}
-            >
-              <Text style={[styles.body, { flex: 1 }]}>Downloads</Text>
-            </Pressable>
-
-            <Pressable
-              style={[
-                menuStyles.menuItem,
-                { borderBottomColor: colors.border },
-              ]}
-              onPress={() => {
-                navigation.navigate('Budgets');
-                onClose();
-              }}
-            >
-              <Text style={[styles.body, { flex: 1 }]}>Budgets</Text>
+              <Text style={[styles.body, { flex: 1 }]}>Transactions</Text>
             </Pressable>
 
             <Pressable
@@ -134,11 +108,37 @@ export function Menu({ visible, onClose }: MenuProps) {
                 { borderBottomColor: colors.border },
               ]}
               onPress={() => {
-                navigation.navigate('Transactions');
+                navigation.navigate('Budgets');
                 onClose();
               }}
             >
-              <Text style={[styles.body, { flex: 1 }]}>Transactions</Text>
+              <Text style={[styles.body, { flex: 1 }]}>Budgets</Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                menuStyles.menuItem,
+                { borderBottomColor: colors.border },
+              ]}
+              onPress={() => {
+                navigation.navigate('Downloads');
+                onClose();
+              }}
+            >
+              <Text style={[styles.body, { flex: 1 }]}>Downloads</Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                menuStyles.menuItem,
+                { borderBottomColor: colors.border },
+              ]}
+              onPress={() => {
+                navigation.navigate('Profile');
+                onClose();
+              }}
+            >
+              <Text style={[styles.body, { flex: 1 }]}>Profile</Text>
             </Pressable>
 
             <Pressable
