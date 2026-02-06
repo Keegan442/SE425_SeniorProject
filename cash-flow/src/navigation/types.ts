@@ -12,6 +12,7 @@ export type RootStackParamList = {
   AddTransaction: undefined;
   AddBudget: undefined;
   AddSubscription: undefined;
+  AddIncome: undefined;
 };
 
 declare global {
