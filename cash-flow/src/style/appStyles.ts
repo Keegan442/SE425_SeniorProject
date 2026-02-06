@@ -10,6 +10,8 @@ export interface Colors {
   ok: string;
   accent: string;
   white: string;
+  red: string;
+  green: string;
 }
 
 // Dark theme colors
@@ -23,6 +25,8 @@ export const darkColors: Colors = {
   ok: '#46D39A',
   accent: '#4F8CFF', 
   white: '#FFFFFF',
+  red: '#E85D5D',
+  green: '#46D39A',
 };
 
 // Light theme colors
@@ -36,9 +40,10 @@ export const lightColors: Colors = {
   ok: '#10B981',
   accent: '#4F8CFF',
   white: '#FFFFFF',
+  red: '#DC2626',
+  green: '#10B981',
 };
 
-// Note: Use getColors() function instead of exporting colors directly
 
 // Get colors based on theme
 export function getColors(theme: 'light' | 'dark' = 'dark'): Colors {

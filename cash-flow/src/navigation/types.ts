@@ -9,6 +9,9 @@ export type RootStackParamList = {
   Budgets: undefined;
   Subscriptions: undefined;
   Transactions: undefined;
+  AddTransaction: undefined;
+  AddBudget: undefined;
+  AddSubscription: undefined;
 };
 
 declare global {
