@@ -5,7 +5,6 @@ A personal finance mobile app that helps you take control of your money by track
 
 ## About
 
-[2-3 sentences about what the app does and why you built it]
 
 **Course:** SE425 Senior Project  
 **School:** NEIT
