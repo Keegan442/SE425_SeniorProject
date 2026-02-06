@@ -35,3 +35,8 @@ This is the Senior Project we created a finance app that is connected and hosted
    npm install
 2. Run Expo Go
    npx expo
+3. Create Acc
+   create Account
+4. Register User
+   Add your info
+5. Start using
