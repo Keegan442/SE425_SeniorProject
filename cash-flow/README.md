@@ -4,12 +4,12 @@ A personal finance mobile app that helps you take control of your money by track
 
 
 ## About
-
+This is the Senior Project we created a finance app that is connected and hosted on AWS
 
 **Course:** SE425 Senior Project  
 **School:** NEIT
 **Author1:** Ian Alvarado
-**Author1:** Keegan Preston
+**Author2:** Keegan Preston
 
 ## Features
 
