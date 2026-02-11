@@ -9,8 +9,15 @@ export interface Session {
 interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    username: string,
+    firstName: string,
+    lastName: string,
+    birthday: string
+  ) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -52,9 +59,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (
+    email: string,
+    password: string,
+    username: string,
+    firstName: string,
+    lastName: string,
+    birthday: string
+  ) => {
     try {
-      const s = await AuthStore.signUp(email, password);
+      const s = await AuthStore.signUp(
+        email,
+        password,
+        username,
+        firstName,
+        lastName,
+        birthday
+      );
       setSession(s);
     } catch (error) {
       // Re-throw the error so it can be caught by the calling component

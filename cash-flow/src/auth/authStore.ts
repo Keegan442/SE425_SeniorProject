@@ -1,11 +1,12 @@
 import { STORAGE_KEYS } from '../storage/keys';
 import { readJson, removeKey, writeJson } from '../storage/storage';
-import { uid } from '../utils/id';
 
 export interface Session {
   userId: string;
   email: string;
 }
+
+const API_URL = 'http://192.168.0.67:3000'; 
 
 function normalizeEmail(email: string): string {
   return String(email || '').trim().toLowerCase();
@@ -19,11 +20,42 @@ export async function signOut(): Promise<void> {
   await removeKey(STORAGE_KEYS.session);
 }
 
-export async function signUp(email: string, password: string): Promise<Session> {
-  // Mock auth (temporary): accept any email/password and create a session.
+export async function signUp(
+  email: string,
+  password: string,
+  username: string,
+  firstName: string,
+  lastName: string,
+  birthday: string
+): Promise<Session> {
   try {
-    const e = normalizeEmail(email) || 'guest@example.com';
-    const session: Session = { userId: uid('u'), email: e };
+    const e = normalizeEmail(email);
+
+    const res = await fetch(`${API_URL}/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        email,
+        password,
+        username,
+        firstName,
+        lastName,
+        birthday,
+       })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to sign up');
+    }
+
+    const data = await res.json();
+
+    const session: Session = {
+      userId: String(data.user.accountId),
+      email: e
+    };
+
     await writeJson(STORAGE_KEYS.session, session);
     return session;
   } catch (error) {
@@ -31,12 +63,28 @@ export async function signUp(email: string, password: string): Promise<Session> 
   }
 }
 
-export async function signIn(email: string, password: string): Promise<Session> {
-  // Mock auth (temporary): accept any email/password and create a session.
-  // We keep the email for display; password is ignored.
+export async function signIn(identifier: string, password: string): Promise<Session> {
   try {
-    const e = normalizeEmail(email) || 'guest@example.com';
-    const session: Session = { userId: uid('u'), email: e };
+    const e = normalizeEmail(identifier);
+
+    const res = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: e, password })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to sign in');
+    }
+
+    const data = await res.json();
+
+    const session: Session = {
+      userId: String(data.user.accountId),
+      email: e
+    };
+
     await writeJson(STORAGE_KEYS.session, session);
     return session;
   } catch (error) {

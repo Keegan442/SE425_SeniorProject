@@ -14,7 +14,7 @@ export default function LoginScreen() {
   const colors = getColors(theme);
   const styles = getAppStyles(colors);
   const navigation = useNavigation();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -22,7 +22,7 @@ export default function LoginScreen() {
     if (busy) return;
     
     setBusy(true);
-    signIn(email, password)
+    signIn(identifier, password)
       .then(() => {
         // Navigation will automatically switch to AppStack when session is set
         setBusy(false);
@@ -49,7 +49,7 @@ export default function LoginScreen() {
 
         <View style={styles.card}>
           <View style={{ marginBottom: 12 }}>
-            <Input label="Email" value={email} onChangeText={setEmail} placeholder="" keyboardType="email-address" />
+            <Input label="Email or Username" value={identifier} onChangeText={setIdentifier} placeholder="" keyboardType="email-address" />
           </View>
           <View style={{ marginBottom: 12 }}>
             <Input label="Password" value={password} onChangeText={setPassword} placeholder="" secureTextEntry />
