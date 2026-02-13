@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { ScrollView, Text, View, Image, Alert, Pressable, ActivityIndicator } from 'react-native';
+import { ScrollView, Text, View, Image, Alert, Pressable, ActivityIndicator, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -9,10 +9,11 @@ import { Input } from '../components/Input';
 import { Menu } from '../components/Menu';
 import { MenuButton } from '../components/MenuButton';
 import { useTheme } from '../theme/ThemeContext';
-import { getAppStyles, getColors } from '../style/appStyles';
+import { getAppStyles, getColors, spacing } from '../style/appStyles';
 import { getUserProfile, saveUserProfile, UserProfile } from '../data/profileStore';
 import { useCurrency } from '../theme/CurrencyContext';
 import { CURRENCIES, CURRENCY_OPTIONS } from '../utils/currency';
+import { AVATARS, isEmojiAvatar, getEmojiFromAvatar, createAvatarString } from '../utils/avatars';
 
 export default function ProfileScreen() {
   const { session } = useContext(AuthContext);
@@ -30,6 +31,7 @@ export default function ProfileScreen() {
   const [birthday, setBirthday] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
 
   useEffect(() => {
     if (session?.userId) {
@@ -83,6 +85,10 @@ export default function ProfileScreen() {
       'Choose an option',
       [
         {
+          text: 'Choose Avatar',
+          onPress: () => setAvatarPickerVisible(true),
+        },
+        {
           text: 'Camera',
           onPress: handleTakePhoto,
         },
@@ -97,6 +103,11 @@ export default function ProfileScreen() {
       ],
       { cancelable: true }
     );
+  }
+
+  function handleSelectAvatar(avatarId: string) {
+    setProfile({ ...profile, profilePicture: createAvatarString(avatarId) });
+    setAvatarPickerVisible(false);
   }
 
   async function handleTakePhoto() {
@@ -193,10 +204,18 @@ export default function ProfileScreen() {
                 style={{ opacity: isEditing ? 1 : 0.8 }}
               >
                 {profile.profilePicture ? (
-                  <Image
-                    source={{ uri: profile.profilePicture }}
-                    style={styles.profileAvatar}
-                  />
+                  isEmojiAvatar(profile.profilePicture) ? (
+                    <View style={styles.profileAvatarPlaceholder}>
+                      <Text style={{ fontSize: 50 }}>
+                        {getEmojiFromAvatar(profile.profilePicture)}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Image
+                      source={{ uri: profile.profilePicture }}
+                      style={styles.profileAvatar}
+                    />
+                  )
                 ) : (
                   <View style={styles.profileAvatarPlaceholder}>
                     <Text style={styles.h2Large}>
@@ -233,22 +252,13 @@ export default function ProfileScreen() {
                   />
                 </View>
                 <View style={styles.formFieldMargin}>
-                  <Input
-                    label="Birthday"
-                    value={birthday}
-                    onChangeText={setBirthday}
-                    placeholder="YYYY-MM-DD"
-                  />
+                  <Input label="Birthday"value={birthday} onChangeText={setBirthday} placeholder="YYYY-MM-DD" />
                 </View>
                 <View style={styles.formFieldMargin}>
                   <Text style={[styles.muted, styles.labelMarginBottom]}>Currency</Text>
                   <View style={styles.currencyRow}>
                     {CURRENCY_OPTIONS.map((code) => (
-                      <Pressable
-                        key={code}
-                        onPress={() => setCurrency(code)}
-                        style={currency === code ? styles.currencyChipSelected : styles.currencyChip}
-                      >
+                      <Pressable key={code} onPress={() => setCurrency(code)} style={currency === code ? styles.currencyChipSelected : styles.currencyChip} >
                         <Text style={[styles.body, currency === code && styles.bodyAccent]}>
                           {code} {CURRENCIES[code]}
                         </Text>
@@ -312,6 +322,70 @@ export default function ProfileScreen() {
         </View>
       </SafeAreaView>
       <Menu visible={menuVisible} onClose={() => setMenuVisible(false)} />
+      
+      {/* Avatar Picker Modal */}
+      <Modal visible={avatarPickerVisible} transparent animationType="slide" onRequestClose={() => setAvatarPickerVisible(false)} >
+        <View style={avatarStyles.overlay}>
+          <View style={[avatarStyles.container, { backgroundColor: colors.bg }]}>
+            <View style={[avatarStyles.header, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.h2, { color: colors.text }]}>Choose Avatar</Text>
+              <Pressable onPress={() => setAvatarPickerVisible(false)}>
+                <Text style={{ fontSize: 20, color: colors.muted }}>✕</Text>
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={avatarStyles.grid}>
+              {AVATARS.map((avatar) => (
+                <Pressable
+                  key={avatar.id}
+                  style={[
+                    avatarStyles.avatarOption,
+                    { backgroundColor: colors.card, borderColor: colors.border },]}
+                  onPress={() => handleSelectAvatar(avatar.id)} >
+                  <Text style={avatarStyles.avatarEmoji}>{avatar.emoji}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
+
+const avatarStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  container: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '70%',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: spacing.lg,
+    gap: spacing.md,
+    justifyContent: 'center',
+  },
+  avatarOption: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  avatarEmoji: {
+    fontSize: 36,
+  },
+});
