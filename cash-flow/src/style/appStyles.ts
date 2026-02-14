@@ -44,8 +44,6 @@ export const lightColors: Colors = {
   green: '#10B981',
 };
 
-
-// Get colors based on theme
 export function getColors(theme: 'light' | 'dark' = 'dark'): Colors {
   return theme === 'light' ? lightColors : darkColors;
 }
@@ -59,7 +57,6 @@ export const spacing = {
   xl: 28,
 } as const;
 
-// Get styles based on theme
 export function getAppStyles(themeColors: Colors) {
   return StyleSheet.create({
     // Layout
@@ -168,6 +165,57 @@ export function getAppStyles(themeColors: Colors) {
       backgroundColor: themeColors.accent + '20',
     },
 
+    // Form
+    formScrollContent: { paddingBottom: spacing.xl },
+    formBackButton: { padding: spacing.xs },
+    formBackText: { fontSize: 16, fontWeight: '500', color: themeColors.accent },
+    formSectionTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: themeColors.muted,
+      marginBottom: spacing.sm,
+    },
+    formSectionMargin: { marginTop: spacing.lg },
+    formAmountContainer: { flexDirection: 'row', alignItems: 'center' },
+    formCurrencySymbol: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: themeColors.text,
+      marginRight: spacing.sm,
+    },
+    formAmountInputWrap: { flex: 1 },
+    formButtonContainer: { marginTop: spacing.lg },
+
+    // Chips
+    chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    chip: {
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: themeColors.border,
+      backgroundColor: themeColors.card,
+    },
+    chipSelected: {
+      borderColor: themeColors.accent,
+      backgroundColor: themeColors.accent,
+    },
+    chipText: { fontSize: 12, fontWeight: '600', color: themeColors.muted },
+    chipTextSelected: { color: themeColors.white },
+
+    // Month Selector
+    monthSelector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    monthArrow: { padding: spacing.sm },
+    monthArrowText: { fontSize: 20, fontWeight: '700', color: themeColors.accent },
+    monthLabelWrap: { flex: 1, alignItems: 'center' },
+    monthLabel: { fontSize: 16, fontWeight: '600', color: themeColors.text },
+
     // Text Styles
     title: { fontSize: 26, fontWeight: '700', color: themeColors.text },
     h2: { fontSize: 18, fontWeight: '700', color: themeColors.text },
@@ -187,5 +235,4 @@ export function getAppStyles(themeColors: Colors) {
   });
 }
 
-// Default styles (dark theme)
 export const appStyles = getAppStyles(darkColors);

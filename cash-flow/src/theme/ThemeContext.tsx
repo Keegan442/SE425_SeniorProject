@@ -21,19 +21,17 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const systemColorScheme = useColorScheme();
-  const [theme, setTheme] = useState<Theme>('dark'); // default to dark
+  const [theme, setTheme] = useState<Theme>('dark');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    // Load saved theme preference
     AsyncStorage.getItem(THEME_STORAGE_KEY)
       .then((savedTheme) => {
         if (!mounted) return;
         if (savedTheme === 'light' || savedTheme === 'dark') {
           setTheme(savedTheme);
         } else {
-          // Use system preference if no saved preference
           setTheme((systemColorScheme || 'dark') as Theme);
         }
         setIsLoading(false);
@@ -53,9 +51,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setTheme(newTheme);
     try {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
-    } catch {
-      // Silently fail - theme will still work for current session
-      // In production, consider logging to error tracking service
+    } catch (e) {
+      console.error('Failed to persist theme:', e);
     }
   };
 
@@ -63,9 +60,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setTheme(newTheme);
     try {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
-    } catch {
-      // Silently fail - theme will still work for current session
-      // In production, consider logging to error tracking service
+    } catch (e) {
+      console.error('Failed to persist theme:', e);
     }
   };
 

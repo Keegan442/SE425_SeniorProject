@@ -1,5 +1,5 @@
 import { useState, useContext, useCallback } from 'react';
-import { Text, View, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Text, View, Image, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Menu } from '../components/Menu';
@@ -16,6 +16,8 @@ const CYCLE_LABELS: Record<string, string> = {
   monthly: 'Monthly',
   yearly: 'Yearly',
 };
+
+const WEEKS_PER_MONTH = 52 / 12;
 
 export default function SubscriptionsScreen() {
   const { theme, toggleTheme } = useTheme();
@@ -35,6 +37,7 @@ export default function SubscriptionsScreen() {
       setSubscriptions(subs);
     } catch (error) {
       console.error('Failed to load subscriptions:', error);
+      Alert.alert('Error', 'Failed to load subscriptions. Please try again.');
     }
   }, [session?.userId]);
 
@@ -44,9 +47,8 @@ export default function SubscriptionsScreen() {
     }, [loadSubscriptions])
   );
 
-  // Calculate monthly total
   const monthlyTotal = subscriptions.reduce((sum, sub) => {
-    if (sub.billingCycle === 'weekly') return sum + (sub.amount * 4);
+    if (sub.billingCycle === 'weekly') return sum + (sub.amount * WEEKS_PER_MONTH);
     if (sub.billingCycle === 'yearly') return sum + (sub.amount / 12);
     return sum + sub.amount;
   }, 0);
@@ -78,14 +80,18 @@ export default function SubscriptionsScreen() {
 
                 <View style={[styles.card, { marginTop: spacing.md }]}>
                   {subscriptions.map((sub) => (
-                    <View key={sub.id} style={localStyles.subItem}>
+                    <Pressable
+                      key={sub.id}
+                      style={localStyles.subItem}
+                      onPress={() => navigation.navigate('SubscriptionDetail', { subscription: sub })}
+                    >
                       <Text style={localStyles.subName}>{sub.name}</Text>
                       <Text style={localStyles.subCycle}>{CYCLE_LABELS[sub.billingCycle]}</Text>
                       <Text style={localStyles.subAmount}>{formatAmount(sub.amount)}</Text>
                       {sub.nextBillingDate && (
                         <Text style={localStyles.subDate}>Next: {sub.nextBillingDate}</Text>
                       )}
-                    </View>
+                    </Pressable>
                   ))}
                 </View>
               </>

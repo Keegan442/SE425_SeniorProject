@@ -1,16 +1,17 @@
-import { useState, useContext, useCallback, useMemo } from 'react';
-import { Text, View, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useState, useContext, useCallback, useEffect } from 'react';
+import { Text, View, Image, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Menu } from '../components/Menu';
 import { MenuButton } from '../components/MenuButton';
 import { Button } from '../components/Button';
+import { SearchBar } from '../components/SearchBar';
 import { useTheme } from '../theme/ThemeContext';
 import { getAppStyles, getColors, spacing } from '../style/appStyles';
 import { AuthContext } from '../auth/AuthContext';
 import { getMonthData, Expense, Category } from '../data/budgetStore';
 import { useCurrency } from '../theme/CurrencyContext';
-import { monthKey } from '../utils/date';
+import { monthKey, shiftMonth } from '../utils/date';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -20,14 +21,6 @@ const MONTH_NAMES = [
 function formatMonthLabel(mKey: string): string {
   const [year, month] = mKey.split('-');
   return `${MONTH_NAMES[parseInt(month, 10) - 1]} ${year}`;
-}
-
-function shiftMonth(mKey: string, offset: number): string {
-  const [year, month] = mKey.split('-').map(Number);
-  const date = new Date(year, month - 1 + offset, 1);
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
 }
 
 function formatDateLabel(dateIso: string): string {
@@ -47,6 +40,9 @@ export default function TransactionsScreen() {
   const [selectedMonth, setSelectedMonth] = useState(monthKey());
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [searchText, setSearchText] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [groupedExpenses, setGroupedExpenses] = useState<{ date: string; items: Expense[] }[]>([]);
 
   const loadTransactions = useCallback(async () => {
     if (!session?.userId) return;
@@ -56,6 +52,7 @@ export default function TransactionsScreen() {
       setCategories(month.categories || []);
     } catch (error) {
       console.error('Failed to load transactions:', error);
+      Alert.alert('Error', 'Failed to load transactions. Please try again.');
     }
   }, [session?.userId, selectedMonth]);
 
@@ -65,18 +62,34 @@ export default function TransactionsScreen() {
     }, [loadTransactions])
   );
 
-  function getCategoryName(categoryId: string): string {
+  const getCategoryName = useCallback((categoryId: string): string => {
     const category = categories.find(c => c.id === categoryId);
     return category?.name || 'Unknown';
-  }
+  }, [categories]);
   const isCurrentMonth = selectedMonth === monthKey();
-  const groupedExpenses = useMemo(() => {
-    const sorted = [...expenses].sort((a, b) =>
+
+  useEffect(() => {
+    let filtered = [...expenses];
+
+    if (filterCategory) {
+      filtered = filtered.filter(e => e.categoryId === filterCategory);
+    }
+
+    if (searchText.trim()) {
+      const query = searchText.trim().toLowerCase();
+      filtered = filtered.filter(e => {
+        const catName = getCategoryName(e.categoryId).toLowerCase();
+        const note = (e.note || '').toLowerCase();
+        return catName.includes(query) || note.includes(query);
+      });
+    }
+
+    filtered.sort((a, b) =>
       new Date(b.dateIso).getTime() - new Date(a.dateIso).getTime()
     );
 
     const groups: { date: string; items: Expense[] }[] = [];
-    for (const expense of sorted) {
+    for (const expense of filtered) {
       const lastGroup = groups[groups.length - 1];
       if (lastGroup && lastGroup.date === expense.dateIso) {
         lastGroup.items.push(expense);
@@ -84,8 +97,8 @@ export default function TransactionsScreen() {
         groups.push({ date: expense.dateIso, items: [expense] });
       }
     }
-    return groups;
-  }, [expenses]);
+    setGroupedExpenses(groups);
+  }, [expenses, filterCategory, searchText, getCategoryName]);
 
   return (
     <>
@@ -103,24 +116,47 @@ export default function TransactionsScreen() {
         </View>
 
         {/* Month Selector */}
-        <View style={localStyles.monthSelector}>
-          <Pressable onPress={() => setSelectedMonth(shiftMonth(selectedMonth, -1))} style={localStyles.monthArrow}>
-            <Text style={localStyles.monthArrowText}>{'<'}</Text>
+        <View style={styles.monthSelector}>
+          <Pressable onPress={() => setSelectedMonth(shiftMonth(selectedMonth, -1))} style={styles.monthArrow}>
+            <Text style={styles.monthArrowText}>{'<'}</Text>
           </Pressable>
-          <Pressable onPress={() => setSelectedMonth(monthKey())} style={localStyles.monthLabelWrap}>
-            <Text style={localStyles.monthLabel}>{formatMonthLabel(selectedMonth)}</Text>
+          <Pressable onPress={() => setSelectedMonth(monthKey())} style={styles.monthLabelWrap}>
+            <Text style={styles.monthLabel}>{formatMonthLabel(selectedMonth)}</Text>
           </Pressable>
           <Pressable
             onPress={() => !isCurrentMonth && setSelectedMonth(shiftMonth(selectedMonth, 1))}
-            style={localStyles.monthArrow}
+            style={styles.monthArrow}
             disabled={isCurrentMonth}
           >
-            <Text style={[localStyles.monthArrowText, isCurrentMonth && { opacity: 0.3 }]}>{'>'}</Text>
+            <Text style={[styles.monthArrowText, isCurrentMonth && { opacity: 0.3 }]}>{'>'}</Text>
           </Pressable>
         </View>
 
-        <View style={styles.screen}>
-          <ScrollView contentContainerStyle={styles.scrollContentBottom} showsVerticalScrollIndicator={false}>
+        <View style={[styles.screen, { paddingTop: spacing.sm }]}>
+          <ScrollView contentContainerStyle={styles.scrollContentBottom} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {/* Search & Filter */}
+            <SearchBar
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="Search by note or category..."
+            />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={localStyles.filterRow}>
+              <Pressable
+                style={[styles.chip, !filterCategory && styles.chipSelected]}
+                onPress={() => setFilterCategory(null)}
+              >
+                <Text style={[styles.chipText, !filterCategory && styles.chipTextSelected]}>All</Text>
+              </Pressable>
+              {categories.map((cat) => (
+                <Pressable
+                  key={cat.id}
+                  style={[styles.chip, filterCategory === cat.id && styles.chipSelected]}
+                  onPress={() => setFilterCategory(filterCategory === cat.id ? null : cat.id)}
+                >
+                  <Text style={[styles.chipText, filterCategory === cat.id && styles.chipTextSelected]}>{cat.name}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
             {groupedExpenses.length === 0 ? (
               <View style={styles.card}>
                 <Text style={styles.h2}>Transactions</Text>
@@ -132,7 +168,15 @@ export default function TransactionsScreen() {
                   <Text style={localStyles.dateHeader}>{formatDateLabel(group.date)}</Text>
                   <View style={styles.card}>
                     {group.items.map((expense) => (
-                      <View key={expense.id} style={localStyles.transactionItem}>
+                      <Pressable
+                        key={expense.id}
+                        style={localStyles.transactionItem}
+                        onPress={() => navigation.navigate('TransactionDetail', {
+                          expense,
+                          categoryName: getCategoryName(expense.categoryId),
+                          monthKey: selectedMonth,
+                        })}
+                      >
                         <Text style={localStyles.transactionCategory}>
                           {getCategoryName(expense.categoryId)}
                         </Text>
@@ -144,7 +188,7 @@ export default function TransactionsScreen() {
                         <Text style={localStyles.transactionAmount}>
                           -{formatAmount(expense.amount)}
                         </Text>
-                      </View>
+                      </Pressable>
                     ))}
                   </View>
                 </View>
@@ -168,29 +212,10 @@ export default function TransactionsScreen() {
 
 function createLocalStyles(colors: ReturnType<typeof getColors>) {
   return StyleSheet.create({
-    monthSelector: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm,
-    },
-    monthArrow: {
-      padding: spacing.sm,
-    },
-    monthArrowText: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: colors.accent,
-    },
-    monthLabelWrap: {
-      flex: 1,
-      alignItems: 'center',
-    },
-    monthLabel: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
+    filterRow: {
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.xs,
+      gap: 6,
     },
     dateHeader: {
       fontSize: 13,
