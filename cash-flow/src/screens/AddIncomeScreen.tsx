@@ -7,6 +7,7 @@ import { getColors, getAppStyles, spacing } from '../style/appStyles';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { AuthContext } from '../auth/AuthContext';
+import { updateIncome } from '../data/budgetStore';
 import { useCurrency } from '../theme/CurrencyContext';
 import { CURRENCIES } from '../utils/currency';
 
@@ -36,8 +37,8 @@ export default function AddIncomeScreen() {
 
     try {
       setLoading(true);
-      // TODO: Add saveIncome function to budgetStore
-      Alert.alert('Success', 'Income added successfully', [
+      await updateIncome(session.userId, numAmount);
+      Alert.alert('Success', 'Income updated successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error) {

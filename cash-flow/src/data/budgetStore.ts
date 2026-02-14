@@ -100,6 +100,16 @@ export async function addExpense(
   return newExpense;
 }
 
+export async function updateIncome(userId: string, income: number): Promise<void> {
+  const mKey = monthKey();
+  const { all, month } = await getMonthData(userId, mKey);
+  
+  month.income = income;
+  all.months[mKey] = month;
+  
+  await writeJson(userKey(userId), all);
+}
+
 export async function getCategories(userId: string): Promise<Category[]> {
   const { month } = await getMonthData(userId);
   return month.categories;

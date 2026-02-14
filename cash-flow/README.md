@@ -7,8 +7,8 @@ A personal finance mobile app that helps you take control of your money by track
 This is the Senior Project we created a finance app that is connected and hosted on AWS
 
 **Course:** SE425 Senior Project  
-**School:** NEIT
-**Author1:** Ian Alvarado
+**School:** NEIT  
+**Author1:** Ian Alvarado  
 **Author2:** Keegan Preston
 
 ## Features
@@ -28,13 +28,18 @@ This is the Senior Project we created a finance app that is connected and hosted
 - AsyncStorage (local data persistence)
 - React Navigation
 - React Alert
+- AWS
 
 ## Getting Started
 
 1. Install dependencies:
+   ```bash
    npm install
+   ```
 2. Run Expo Go
+   ```bash
    npx expo
+   ```
 3. Create Acc
    create Account
 4. Register User
