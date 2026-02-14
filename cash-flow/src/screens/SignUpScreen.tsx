@@ -8,6 +8,14 @@ import { Input } from '../components/Input';
 import { useTheme } from '../theme/ThemeContext';
 import { getAppStyles, getColors } from '../style/appStyles';
 
+function formatBirthday(text: string) {
+  const digits = text.replace(/\D/g, '');
+
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+}
+
 export default function SignUpScreen() {
   const { signUp } = useContext(AuthContext);
   const { theme } = useTheme();
@@ -32,7 +40,14 @@ export default function SignUpScreen() {
     }
     
     setBusy(true);
-    signUp(email, password)
+    signUp(
+      email,
+      password,
+      username,
+      firstName,
+      lastName,
+      birthday
+    )
       .then(() => {
         // Navigation will automatically switch to AppStack when session is set
         setBusy(false);
@@ -63,7 +78,7 @@ export default function SignUpScreen() {
               <Input label="Last Name" value={lastName} onChangeText={setLastName} placeholder="" autoCapitalize="words" />
             </View>
             <View style={{ marginBottom: 12 }}>
-              <Input label="Birthday" value={birthday} onChangeText={setBirthday} placeholder="MM/DD/YYYY" keyboardType="numeric" />
+              <Input label="Birthday" value={birthday} onChangeText={(text) => setBirthday(formatBirthday(text))} placeholder="MM/DD/YYYY" keyboardType="numeric" />
             </View>
             <View style={{ marginBottom: 12 }}>
               <Input label="Email" value={email} onChangeText={setEmail} placeholder="" keyboardType="email-address" />
