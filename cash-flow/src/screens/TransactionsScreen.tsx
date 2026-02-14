@@ -35,7 +35,6 @@ function formatDateLabel(dateIso: string): string {
   const monthName = MONTH_NAMES[parseInt(month, 10) - 1];
   return `${monthName} ${parseInt(day, 10)}, ${year}`;
 }
-
 export default function TransactionsScreen() {
   const { theme, toggleTheme } = useTheme();
   const { session } = useContext(AuthContext);
@@ -70,10 +69,7 @@ export default function TransactionsScreen() {
     const category = categories.find(c => c.id === categoryId);
     return category?.name || 'Unknown';
   }
-
   const isCurrentMonth = selectedMonth === monthKey();
-
-  // Group expenses by date, sorted newest first
   const groupedExpenses = useMemo(() => {
     const sorted = [...expenses].sort((a, b) =>
       new Date(b.dateIso).getTime() - new Date(a.dateIso).getTime()
