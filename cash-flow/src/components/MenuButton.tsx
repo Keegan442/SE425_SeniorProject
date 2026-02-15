@@ -14,8 +14,7 @@ export function MenuButton({ onPress }: MenuButtonProps) {
     <Pressable
       onPress={onPress}
       style={[styles.button, { backgroundColor: colors.card, borderColor: colors.border }]}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-    >
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
       <View style={[styles.line, { backgroundColor: colors.text }]} />
       <View style={[styles.line, { backgroundColor: colors.text }]} />
       <View style={[styles.line, { backgroundColor: colors.text }]} />
