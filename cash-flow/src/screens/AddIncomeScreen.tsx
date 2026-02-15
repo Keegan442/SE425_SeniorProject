@@ -1,9 +1,9 @@
 import { useState, useContext } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
-import { getColors, getAppStyles, spacing } from '../style/appStyles';
+import { getColors, getAppStyles } from '../style/appStyles';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { AuthContext } from '../auth/AuthContext';
@@ -17,8 +17,7 @@ export default function AddIncomeScreen() {
   const { currency } = useCurrency();
   const navigation = useNavigation();
   const colors = getColors(theme);
-  const appStyles = getAppStyles(colors);
-  const styles = createStyles(colors);
+  const styles = getAppStyles(colors);
 
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,6 +41,7 @@ export default function AddIncomeScreen() {
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error) {
+      console.error('Failed to save income:', error);
       Alert.alert('Error', 'Failed to save income');
     } finally {
       setLoading(false);
@@ -49,34 +49,34 @@ export default function AddIncomeScreen() {
   }
 
   return (
-    <SafeAreaView style={appStyles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Header */}
-      <View style={appStyles.screenHeaderRow}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+      <View style={styles.screenHeaderRow}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.formBackButton}>
+          <Text style={styles.formBackText}>← Back</Text>
         </Pressable>
-        <Text style={appStyles.title}>Add Income</Text>
-        <Pressable onPress={toggleTheme} style={appStyles.themeToggleButton}>
+        <Text style={styles.title}>Add Income</Text>
+        <Pressable onPress={toggleTheme} style={styles.themeToggleButton}>
           <Image
             source={theme === 'dark' ? require('../../assets/images/DarkLogo.png') : require('../../assets/images/LightLogo.png')}
-            style={appStyles.logoImage}
+            style={styles.logoImage}
             resizeMode="contain"
           />
         </Pressable>
       </View>
 
-      <View style={appStyles.screen}>
+      <View style={styles.screen}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.formScrollContent}
         >
-          <View style={appStyles.card}>
+          <View style={styles.card}>
             {/* Amount Input */}
-            <Text style={styles.sectionTitle}>Amount</Text>
-            <View style={styles.amountContainer}>
-              <Text style={styles.currencySymbol}>{CURRENCIES[currency] || '$'}</Text>
-              <View style={styles.amountInputWrap}>
+            <Text style={styles.formSectionTitle}>Amount</Text>
+            <View style={styles.formAmountContainer}>
+              <Text style={styles.formCurrencySymbol}>{CURRENCIES[currency] || '$'}</Text>
+              <View style={styles.formAmountInputWrap}>
                 <Input
                   value={amount}
                   onChangeText={setAmount}
@@ -89,7 +89,7 @@ export default function AddIncomeScreen() {
           </View>
 
           {/* Save Button */}
-          <View style={styles.buttonContainer}>
+          <View style={styles.formButtonContainer}>
             <Button
               title="Save Income"
               onPress={handleSave}
@@ -99,7 +99,7 @@ export default function AddIncomeScreen() {
             />
           </View>
 
-          <View style={styles.buttonContainer}>
+          <View style={styles.formButtonContainer}>
             <Button
               title="Cancel"
               onPress={() => navigation.goBack()}
@@ -110,45 +110,4 @@ export default function AddIncomeScreen() {
       </View>
     </SafeAreaView>
   );
-}
-
-function createStyles(colors: ReturnType<typeof getColors>) {
-  return StyleSheet.create({
-    scrollContent: {
-      paddingBottom: spacing.xl,
-    },
-    backButton: {
-      padding: spacing.xs,
-    },
-    backText: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: colors.accent,
-    },
-    sectionTitle: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.muted,
-      marginBottom: spacing.sm,
-    },
-    sectionMargin: {
-      marginTop: spacing.lg,
-    },
-    amountContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    currencySymbol: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-      marginRight: spacing.sm,
-    },
-    amountInputWrap: {
-      flex: 1,
-    },
-    buttonContainer: {
-      marginTop: spacing.lg,
-    },
-  });
 }

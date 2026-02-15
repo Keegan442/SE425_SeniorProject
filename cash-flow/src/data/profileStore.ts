@@ -4,9 +4,9 @@ import { readJson, writeJson } from '../storage/storage';
 export interface UserProfile {
   firstName: string;
   lastName: string;
-  profilePicture: string | null; // URI or base64 string
-  birthday: string | null; // ISO date YYYY-MM-DD
-  currency: string; // e.g. USD, EUR
+  profilePicture: string | null;
+  birthday: string | null;
+  currency: string;
 }
 
 const defaultProfile: UserProfile = {

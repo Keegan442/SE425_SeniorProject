@@ -1,3 +1,5 @@
+import type { Expense, Subscription, Category } from '../data/budgetStore';
+
 export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
@@ -13,6 +15,9 @@ export type RootStackParamList = {
   AddBudget: undefined;
   AddSubscription: undefined;
   AddIncome: undefined;
+  TransactionDetail: { expense: Expense; categoryName: string; monthKey: string };
+  SubscriptionDetail: { subscription: Subscription };
+  BudgetDetail: { category: Category & { spent: number } };
 };
 
 declare global {

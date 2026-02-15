@@ -24,11 +24,10 @@ export default function LoginScreen() {
     setBusy(true);
     signIn(identifier, password)
       .then(() => {
-        // Navigation will automatically switch to AppStack when session is set
         setBusy(false);
       })
       .catch((e) => {
-        // Ensure we always have a valid error message string
+        console.error('Login failed:', e);
         let errorMessage = 'Try again.';
         if (e instanceof Error && e.message) {
           errorMessage = e.message;

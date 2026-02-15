@@ -5,7 +5,7 @@ import { monthKey, isoDate } from '../utils/date';
 export interface Category {
   id: string;
   name: string;
-  limit?: number; //This is the limit for the category  
+  limit?: number;
 }
 
 export interface Expense {
@@ -32,12 +32,12 @@ export interface Subscription {
   createdAt: string;
 }
 
-interface UserData {  //This is the data that is stored in the database
+interface UserData {
   months: Record<string, Month>;
   subscriptions?: Subscription[];
 }
 
-const DEFAULT_CATEGORIES: Category[] = [                 //Categories that are used in the app
+const DEFAULT_CATEGORIES: Category[] = [
   { id: 'food', name: 'Food & Dining' },
   { id: 'transport', name: 'Transportation' },
   { id: 'entertainment', name: 'Entertainment' },
@@ -48,7 +48,7 @@ const DEFAULT_CATEGORIES: Category[] = [                 //Categories that are u
 ];
 
 function userKey(userId: string): string {
-  return `${STORAGE_KEYS.dataPrefix}${userId}`; //This keeps the usersid
+  return `${STORAGE_KEYS.dataPrefix}${userId}`;
 }
 
 function emptyMonth(): Month {
@@ -67,7 +67,7 @@ export async function getMonthData(userId: string, mKey: string = monthKey()): P
   const all = await readJson<UserData>(userKey(userId), { months: {} });
   let month = all.months?.[mKey];
   
-  // If month doesn't exist or has no categories, use defaults
+ 
   if (!month) {
     month = emptyMonth();
   } else if (!month.categories || month.categories.length === 0) {
@@ -75,6 +75,16 @@ export async function getMonthData(userId: string, mKey: string = monthKey()): P
   }
   
   return { all, month };
+}
+
+export async function getYearData(userId: string, year: string): Promise<{ months: Record<string, Month> }> {
+  const all = await readJson<UserData>(userKey(userId), { months: {} });
+  const yearMonths: Record<string, Month> = {};
+  for (let m = 1; m <= 12; m++) {
+    const mKey = `${year}-${String(m).padStart(2, '0')}`;
+    if (all.months[mKey]) yearMonths[mKey] = all.months[mKey];
+  }
+  return { months: yearMonths };
 }
 
 export async function addExpense(
@@ -113,6 +123,31 @@ export async function updateIncome(userId: string, income: number): Promise<void
 export async function getCategories(userId: string): Promise<Category[]> {
   const { month } = await getMonthData(userId);
   return month.categories;
+}
+
+// Delete functions
+export async function deleteExpense(userId: string, expenseId: string, mKey: string = monthKey()): Promise<void> {
+  const { all, month } = await getMonthData(userId, mKey);
+  month.expenses = month.expenses.filter(e => e.id !== expenseId);
+  all.months[mKey] = month;
+  await writeJson(userKey(userId), all);
+}
+
+export async function deleteSubscription(userId: string, subscriptionId: string): Promise<void> {
+  const all = await readJson<UserData>(userKey(userId), { months: {}, subscriptions: [] });
+  all.subscriptions = (all.subscriptions || []).filter(s => s.id !== subscriptionId);
+  await writeJson(userKey(userId), all);
+}
+
+export async function clearBudgetLimit(userId: string, categoryId: string): Promise<void> {
+  const mKey = monthKey();
+  const { all, month } = await getMonthData(userId, mKey);
+  const categoryIndex = month.categories.findIndex(c => c.id === categoryId);
+  if (categoryIndex >= 0) {
+    month.categories[categoryIndex].limit = undefined;
+  }
+  all.months[mKey] = month;
+  await writeJson(userKey(userId), all);
 }
 
 // Budget limit functions

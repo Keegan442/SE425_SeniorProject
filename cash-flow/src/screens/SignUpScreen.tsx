@@ -49,10 +49,10 @@ export default function SignUpScreen() {
       birthday
     )
       .then(() => {
-        // Navigation will automatically switch to AppStack when session is set
         setBusy(false);
       })
       .catch((e) => {
+        console.error('Sign up failed:', e);
         const errorMessage = e instanceof Error ? e.message : 'Try again.';
         Alert.alert('Sign up failed', errorMessage);
         setBusy(false);
