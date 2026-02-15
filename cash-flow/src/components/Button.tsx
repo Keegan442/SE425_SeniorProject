@@ -90,15 +90,11 @@ export function Button({ title, onPress, variant = 'primary', disabled = false, 
   const colors = getColors(theme);
   const styles = createButtonStyles(colors);
 
-  // Ensure title is always a string
-  const displayTitle = typeof title === 'string' ? title : String(title || '');
-
   const handlePress = () => {
     if (disabled || loading) return;
     try {
       onPress();
     } catch (error) {
-      // Prevent errors from being rendered as strings
       console.error('Button onPress error:', error);
     }
   };
@@ -129,7 +125,7 @@ export function Button({ title, onPress, variant = 'primary', disabled = false, 
           variant === 'ghost' && styles.textGhost,
           variant === 'outline' && styles.textOutline,
         ]}>
-          {displayTitle}
+          {title}
         </Text>
       )}
     </Pressable>

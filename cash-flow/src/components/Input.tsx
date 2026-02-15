@@ -20,7 +20,7 @@ interface InputProps {
 }
 
 const createInputStyles = (colors: Colors) => StyleSheet.create({
-  wrap: {},
+  wrap: { },
   label: { color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 8 },
   input: {
     backgroundColor: colors.card,
