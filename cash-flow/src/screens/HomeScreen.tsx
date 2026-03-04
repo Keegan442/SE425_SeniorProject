@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState, useCallback } from 'react';
+import { useContext, useState, useCallback } from 'react';
 import { Text, View, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -21,6 +21,7 @@ export default function HomeScreen() {
   const styles = getAppStyles(colors);
   const [income, setIncome] = useState(0);
   const [spent, setSpent] = useState(0);
+  const [remaining, setRemaining] = useState(0);
   const [menuVisible, setMenuVisible] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -29,11 +30,16 @@ export default function HomeScreen() {
       const { month } = await getMonthData(session.userId, monthKey());
       const incomeValue = Number(month?.income) || 0;
       const spentValue = sumExpenses(month?.expenses);
-      setIncome(isNaN(incomeValue) ? 0 : incomeValue);
-      setSpent(isNaN(spentValue) ? 0 : spentValue);
+      const safeIncome = isNaN(incomeValue) ? 0 : incomeValue;
+      const safeSpent = isNaN(spentValue) ? 0 : spentValue;
+      setIncome(safeIncome);
+      setSpent(safeSpent);
+      const result = safeIncome - safeSpent;
+      setRemaining(isNaN(result) ? 0 : result);
     } catch {
       setIncome(0);
       setSpent(0);
+      setRemaining(0);
     }
   }, [session?.userId]);
 
@@ -42,11 +48,6 @@ export default function HomeScreen() {
       loadData();
     }, [loadData])
   );
-
-  const remaining = useMemo(() => {
-    const result = income - spent;
-    return isNaN(result) ? 0 : result;
-  }, [income, spent]);
 
   return (
     <>

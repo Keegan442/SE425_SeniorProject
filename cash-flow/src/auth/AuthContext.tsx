@@ -54,7 +54,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const s = await AuthStore.signIn(email, password);
       setSession(s);
     } catch (error) {
-      // Re-throw the error so it can be caught by the calling component
       throw error instanceof Error ? error : new Error(String(error));
     }
   }, []);
@@ -78,7 +77,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       );
       setSession(s);
     } catch (error) {
-      // Re-throw the error so it can be caught by the calling component
       throw error instanceof Error ? error : new Error(String(error));
     }
   }, []);

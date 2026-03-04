@@ -1,7 +1,8 @@
 import { useState, useContext } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Image, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useTheme } from '../theme/ThemeContext';
 import { getColors, getAppStyles, spacing } from '../style/appStyles';
 import { Input } from '../components/Input';
@@ -10,6 +11,7 @@ import { AuthContext } from '../auth/AuthContext';
 import { addSubscription } from '../data/budgetStore';
 import { useCurrency } from '../theme/CurrencyContext';
 import { CURRENCIES } from '../utils/currency';
+import { isoDate } from '../utils/date';
 
 type BillingCycle = 'weekly' | 'monthly' | 'yearly';
 
@@ -25,14 +27,20 @@ export default function AddSubscriptionScreen() {
   const { currency } = useCurrency();
   const navigation = useNavigation();
   const colors = getColors(theme);
-  const appStyles = getAppStyles(colors);
-  const styles = createStyles(colors);
+  const styles = getAppStyles(colors);
+  const local = createLocalStyles(colors);
 
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
-  const [nextBillingDate, setNextBillingDate] = useState('');
+  const [nextBillingDate, setNextBillingDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const onDateChange = (_event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (selected) setNextBillingDate(selected);
+  };
 
   async function handleSave() {
     if (!session?.userId) {
@@ -57,12 +65,13 @@ export default function AddSubscriptionScreen() {
         name: name.trim(),
         amount: numAmount,
         billingCycle,
-        nextBillingDate: nextBillingDate.trim() || undefined,
+        nextBillingDate: nextBillingDate ? isoDate(nextBillingDate) : undefined,
       });
       Alert.alert('Success', 'Subscription added successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error) {
+      console.error('Failed to save subscription:', error);
       Alert.alert('Error', 'Failed to save subscription');
     } finally {
       setLoading(false);
@@ -70,29 +79,29 @@ export default function AddSubscriptionScreen() {
   }
 
   return (
-    <SafeAreaView style={appStyles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Header */}
-      <View style={appStyles.screenHeaderRow}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+      <View style={styles.screenHeaderRow}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.formBackButton}>
+          <Text style={styles.formBackText}>← Back</Text>
         </Pressable>
-        <Text style={appStyles.title}>Add Subscription</Text>
-        <Pressable onPress={toggleTheme} style={appStyles.themeToggleButton}>
+        <Text style={styles.title}>Add Subscription</Text>
+        <Pressable onPress={toggleTheme} style={styles.themeToggleButton}>
           <Image
             source={theme === 'dark' ? require('../../assets/images/DarkLogo.png') : require('../../assets/images/LightLogo.png')}
-            style={appStyles.logoImage}
+            style={styles.logoImage}
             resizeMode="contain"
           />
         </Pressable>
       </View>
 
-      <View style={appStyles.screen}>
+      <View style={styles.screen}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.formScrollContent}
         >
-          <View style={appStyles.card}>
+          <View style={styles.card}>
             {/* Name Input */}
             <Input
               label="Subscription Name"
@@ -103,10 +112,10 @@ export default function AddSubscriptionScreen() {
             />
 
             {/* Amount Input */}
-            <Text style={[styles.sectionTitle, styles.sectionMargin]}>Amount</Text>
-            <View style={styles.amountContainer}>
-              <Text style={styles.currencySymbol}>{CURRENCIES[currency] || '$'}</Text>
-              <View style={styles.amountInputWrap}>
+            <Text style={[styles.formSectionTitle, styles.formSectionMargin]}>Amount</Text>
+            <View style={styles.formAmountContainer}>
+              <Text style={styles.formCurrencySymbol}>{CURRENCIES[currency] || '$'}</Text>
+              <View style={styles.formAmountInputWrap}>
                 <Input
                   value={amount}
                   onChangeText={setAmount}
@@ -117,21 +126,21 @@ export default function AddSubscriptionScreen() {
             </View>
 
             {/* Billing Cycle Selection */}
-            <Text style={[styles.sectionTitle, styles.sectionMargin]}>Billing Cycle</Text>
-            <View style={styles.cycleGrid}>
+            <Text style={[styles.formSectionTitle, styles.formSectionMargin]}>Billing Cycle</Text>
+            <View style={local.cycleGrid}>
               {BILLING_CYCLES.map((cycle) => (
                 <Pressable
                   key={cycle.id}
                   style={[
-                    styles.cycleChip,
-                    billingCycle === cycle.id && styles.cycleChipSelected,
+                    local.cycleChip,
+                    billingCycle === cycle.id && local.cycleChipSelected,
                   ]}
                   onPress={() => setBillingCycle(cycle.id)}
                 >
                   <Text
                     style={[
-                      styles.cycleText,
-                      billingCycle === cycle.id && styles.cycleTextSelected,
+                      local.cycleText,
+                      billingCycle === cycle.id && local.cycleTextSelected,
                     ]}
                   >
                     {cycle.label}
@@ -141,18 +150,55 @@ export default function AddSubscriptionScreen() {
             </View>
 
             {/* Next Billing Date */}
-            <View style={styles.sectionMargin}>
-              <Input
-                label="Next Billing Date (optional)"
-                value={nextBillingDate}
-                onChangeText={setNextBillingDate}
-                placeholder="YYYY-MM-DD"
-              />
+            <View style={styles.formSectionMargin}>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 8 }}>
+                Next Billing Date 
+              </Text>
+              <Pressable
+                onPress={() => {
+                  if (!nextBillingDate) setNextBillingDate(new Date());
+                  setShowDatePicker(!showDatePicker);
+                }}
+                style={{
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  paddingVertical: 12,
+                  paddingHorizontal: spacing.md,
+                  borderRadius: 12,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: nextBillingDate ? colors.text : colors.muted, fontSize: 16 }}>
+                  {nextBillingDate ? nextBillingDate.toLocaleDateString() : 'Tap to select date'}
+                </Text>
+                {nextBillingDate && (
+                  <Pressable
+                    onPress={() => {
+                      setNextBillingDate(null);
+                      setShowDatePicker(false);
+                    }}
+                    hitSlop={8}
+                  >
+                    <Text style={{ color: colors.muted, fontSize: 16 }}>✕</Text>
+                  </Pressable>
+                )}
+              </Pressable>
+              {showDatePicker && nextBillingDate && (
+                <DateTimePicker
+                  value={nextBillingDate}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                />
+              )}
             </View>
           </View>
 
           {/* Save Button */}
-          <View style={styles.buttonContainer}>
+          <View style={styles.formButtonContainer}>
             <Button
               title="Save Subscription"
               onPress={handleSave}
@@ -162,7 +208,7 @@ export default function AddSubscriptionScreen() {
             />
           </View>
 
-          <View style={styles.buttonContainer}>
+          <View style={styles.formButtonContainer}>
             <Button
               title="Cancel"
               onPress={() => navigation.goBack()}
@@ -175,41 +221,8 @@ export default function AddSubscriptionScreen() {
   );
 }
 
-function createStyles(colors: ReturnType<typeof getColors>) {
+function createLocalStyles(colors: ReturnType<typeof getColors>) {
   return StyleSheet.create({
-    scrollContent: {
-      paddingBottom: spacing.xl,
-    },
-    backButton: {
-      padding: spacing.xs,
-    },
-    backText: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: colors.accent,
-    },
-    sectionTitle: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.muted,
-      marginBottom: spacing.sm,
-    },
-    sectionMargin: {
-      marginTop: spacing.lg,
-    },
-    amountContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    currencySymbol: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-      marginRight: spacing.sm,
-    },
-    amountInputWrap: {
-      flex: 1,
-    },
     cycleGrid: {
       flexDirection: 'row',
       gap: spacing.sm,
@@ -235,9 +248,6 @@ function createStyles(colors: ReturnType<typeof getColors>) {
     },
     cycleTextSelected: {
       color: colors.accent,
-    },
-    buttonContainer: {
-      marginTop: spacing.lg,
     },
   });
 }

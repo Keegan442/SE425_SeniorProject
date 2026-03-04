@@ -1,9 +1,12 @@
 import { useState, useEffect, useContext } from 'react';
-import { View, Text, Pressable, Modal, StyleSheet, Animated, Image } from 'react-native';
+import { View, Text, Pressable, Modal, StyleSheet, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { getColors, getAppStyles, spacing } from '../style/appStyles';
 import { AuthContext } from '../auth/AuthContext';
+
+const DRAWER_WIDTH = 260;
+const DRAWER_OFFSCREEN_X = -DRAWER_WIDTH - 40;
 
 interface MenuProps {
   visible: boolean;
@@ -16,7 +19,7 @@ export function Menu({ visible, onClose }: MenuProps) {
   const navigation = useNavigation();
   const colors = getColors(theme);
   const styles = getAppStyles(colors);
-  const [slideAnim] = useState(new Animated.Value(-300));
+  const [slideAnim] = useState(new Animated.Value(DRAWER_OFFSCREEN_X));
 
   useEffect(() => {
     if (visible) {
@@ -28,7 +31,7 @@ export function Menu({ visible, onClose }: MenuProps) {
       }).start();
     } else {
       Animated.timing(slideAnim, {
-        toValue: -300,
+        toValue: DRAWER_OFFSCREEN_X,
         duration: 200,
         useNativeDriver: true,
       }).start();
@@ -40,16 +43,14 @@ export function Menu({ visible, onClose }: MenuProps) {
       visible={visible}
       transparent
       animationType="none"
-      onRequestClose={onClose}
-    >
+      onRequestClose={onClose} >
       <Pressable style={menuStyles.overlay} onPress={onClose}>
         <Animated.View
           style={[
             menuStyles.drawer,
             { backgroundColor: colors.card, borderRightColor: colors.border, transform: [{ translateX: slideAnim }] },
           ]}
-          onStartShouldSetResponder={() => true}
-        >
+          onStartShouldSetResponder={() => true} >
           <View style={[menuStyles.header, { borderBottomColor: colors.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
               <Text style={[menuStyles.wordmarkCash, { color: colors.text }]}>Cash</Text>
@@ -61,7 +62,6 @@ export function Menu({ visible, onClose }: MenuProps) {
               </Pressable>
             </View>
           </View>
-
           <View style={menuStyles.content}>
             <Pressable
               style={[
@@ -75,7 +75,6 @@ export function Menu({ visible, onClose }: MenuProps) {
             >
               <Text style={[styles.body, { flex: 1 }]}>Dashboard</Text>
             </Pressable>
-
             <Pressable
               style={[
                 menuStyles.menuItem,
@@ -88,7 +87,6 @@ export function Menu({ visible, onClose }: MenuProps) {
             >
               <Text style={[styles.body, { flex: 1 }]}>Transactions</Text>
             </Pressable>
-
             <Pressable
               style={[
                 menuStyles.menuItem,
@@ -110,8 +108,7 @@ export function Menu({ visible, onClose }: MenuProps) {
               onPress={() => {
                 navigation.navigate('Budgets');
                 onClose();
-              }}
-            >
+              }}>
               <Text style={[styles.body, { flex: 1 }]}>Budgets</Text>
             </Pressable>
 
@@ -163,7 +160,7 @@ const menuStyles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   drawer: {
-    width: 260,
+    width: DRAWER_WIDTH,
     height: '100%',
     borderRightWidth: 1,
     shadowColor: '#000',
@@ -177,16 +174,12 @@ const menuStyles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.lg,
-    paddingTop: 38, // spacing.xl (28) + 10
+    paddingTop: 38,
     borderBottomWidth: 1,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  logo: {
-    width: 40,
-    height: 40,
   },
   closeButton: {
     padding: spacing.xs,

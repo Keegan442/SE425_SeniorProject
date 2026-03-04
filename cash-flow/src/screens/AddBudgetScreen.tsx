@@ -1,9 +1,9 @@
 import { useState, useEffect, useContext } from 'react';
-import {View, Text, Pressable, ScrollView, StyleSheet, Alert, Image} from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
-import { getColors, getAppStyles, spacing } from '../style/appStyles';
+import { getColors, getAppStyles } from '../style/appStyles';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { AuthContext } from '../auth/AuthContext';
@@ -17,8 +17,7 @@ export default function AddBudgetScreen() {
   const { currency } = useCurrency();
   const navigation = useNavigation();
   const colors = getColors(theme);
-  const appStyles = getAppStyles(colors);
-  const styles = createStyles(colors);
+  const styles = getAppStyles(colors);
 
   const [limit, setLimit] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -41,6 +40,7 @@ export default function AddBudgetScreen() {
       }
     } catch (error) {
       console.error('Failed to load categories:', error);
+      Alert.alert('Error', 'Failed to load categories. Please try again.');
     }
   }
 
@@ -68,6 +68,7 @@ export default function AddBudgetScreen() {
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error) {
+      console.error('Failed to save budget:', error);
       Alert.alert('Error', 'Failed to save budget');
     } finally {
       setLoading(false);
@@ -75,45 +76,45 @@ export default function AddBudgetScreen() {
   }
 
   return (
-    <SafeAreaView style={appStyles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Header */}
-      <View style={appStyles.screenHeaderRow}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+      <View style={styles.screenHeaderRow}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.formBackButton}>
+          <Text style={styles.formBackText}>← Back</Text>
         </Pressable>
-        <Text style={appStyles.title}>Set Budget</Text>
-        <Pressable onPress={toggleTheme} style={appStyles.themeToggleButton}>
+        <Text style={styles.title}>Set Budget</Text>
+        <Pressable onPress={toggleTheme} style={styles.themeToggleButton}>
           <Image
             source={theme === 'dark' ? require('../../assets/images/DarkLogo.png') : require('../../assets/images/LightLogo.png')}
-            style={appStyles.logoImage}
+            style={styles.logoImage}
             resizeMode="contain"
           />
         </Pressable>
       </View>
 
-      <View style={appStyles.screen}>
+      <View style={styles.screen}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.formScrollContent}
         >
-          <View style={appStyles.card}>
+          <View style={styles.card}>
             {/* Category Selection */}
-            <Text style={styles.sectionTitle}>Category</Text>
-            <View style={styles.categoryGrid}>
+            <Text style={styles.formSectionTitle}>Category</Text>
+            <View style={styles.chipGrid}>
               {categories.map((cat) => (
                 <Pressable
                   key={cat.id}
                   style={[
-                    styles.categoryChip,
-                    selectedCategory === cat.id && styles.categoryChipSelected,
+                    styles.chip,
+                    selectedCategory === cat.id && styles.chipSelected,
                   ]}
                   onPress={() => setSelectedCategory(cat.id)}
                 >
                   <Text
                     style={[
-                      styles.categoryText,
-                      selectedCategory === cat.id && styles.categoryTextSelected,
+                      styles.chipText,
+                      selectedCategory === cat.id && styles.chipTextSelected,
                     ]}
                   >
                     {cat.name}
@@ -123,10 +124,10 @@ export default function AddBudgetScreen() {
             </View>
 
             {/* Budget Limit Input */}
-            <Text style={[styles.sectionTitle, styles.sectionMargin]}>Monthly Limit</Text>
-            <View style={styles.amountContainer}>
-              <Text style={styles.currencySymbol}>{CURRENCIES[currency] || '$'}</Text>
-              <View style={styles.amountInputWrap}>
+            <Text style={[styles.formSectionTitle, styles.formSectionMargin]}>Monthly Limit</Text>
+            <View style={styles.formAmountContainer}>
+              <Text style={styles.formCurrencySymbol}>{CURRENCIES[currency] || '$'}</Text>
+              <View style={styles.formAmountInputWrap}>
                 <Input
                   value={limit}
                   onChangeText={setLimit}
@@ -138,7 +139,7 @@ export default function AddBudgetScreen() {
           </View>
 
           {/* Save Button */}
-          <View style={styles.buttonContainer}>
+          <View style={styles.formButtonContainer}>
             <Button
               title="Save Budget"
               onPress={handleSave}
@@ -148,7 +149,7 @@ export default function AddBudgetScreen() {
             />
           </View>
 
-          <View style={styles.buttonContainer}>
+          <View style={styles.formButtonContainer}>
             <Button
               title="Cancel"
               onPress={() => navigation.goBack()}
@@ -161,68 +162,3 @@ export default function AddBudgetScreen() {
   );
 }
 
-function createStyles(colors: ReturnType<typeof getColors>) {
-  return StyleSheet.create({
-    scrollContent: {
-      paddingBottom: spacing.xl,
-    },
-    backButton: {
-      padding: spacing.xs,
-    },
-    backText: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: colors.accent,
-    },
-    sectionTitle: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.muted,
-      marginBottom: spacing.sm,
-    },
-    sectionMargin: {
-      marginTop: spacing.lg,
-    },
-    amountContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    currencySymbol: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-      marginRight: spacing.sm,
-    },
-    amountInputWrap: {
-      flex: 1,
-    },
-    categoryGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: spacing.sm,
-    },
-    categoryChip: {
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.md,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    categoryChipSelected: {
-      borderColor: colors.accent,
-      backgroundColor: colors.accent + '20',
-    },
-    categoryText: {
-      fontSize: 14,
-      fontWeight: '500',
-      color: colors.text,
-    },
-    categoryTextSelected: {
-      color: colors.accent,
-    },
-    buttonContainer: {
-      marginTop: spacing.lg,
-    },
-  });
-}

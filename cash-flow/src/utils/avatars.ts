@@ -1,4 +1,3 @@
-// Predefined avatar options using emojis
 export interface Avatar {
   id: string;
   emoji: string;
@@ -26,7 +25,6 @@ export const AVATARS: Avatar[] = [
   { id: 'moon', emoji: '🌙', label: 'Moon' },
 ];
 
-// Check if a profile picture is an emoji avatar (starts with "emoji:")
 export function isEmojiAvatar(profilePicture: string | null): boolean {
   return profilePicture?.startsWith('emoji:') ?? false;
 }
@@ -38,7 +36,6 @@ export function getEmojiFromAvatar(profilePicture: string | null): string | null
   return avatar?.emoji ?? null;
 }
 
-// Create avatar string from id (e.g., "smile" -> "emoji:smile")
 export function createAvatarString(id: string): string {
   return `emoji:${id}`;
 }

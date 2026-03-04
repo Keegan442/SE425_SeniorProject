@@ -1,5 +1,5 @@
 import { useState, useContext, useCallback } from 'react';
-import { Text, View, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Text, View, Image, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Menu } from '../components/Menu';
@@ -31,6 +31,7 @@ export default function BudgetsScreen() {
       setCategories(cats);
     } catch (error) {
       console.error('Failed to load budgets:', error);
+      Alert.alert('Error', 'Failed to load budgets. Please try again.');
     }
   }, [session?.userId]);
 
@@ -40,7 +41,6 @@ export default function BudgetsScreen() {
     }, [loadBudgets])
   );
 
-  // Filter categories that have a budget limit set
   const budgetsWithLimits = categories.filter(c => c.limit && c.limit > 0);
 
   return (
@@ -72,7 +72,11 @@ export default function BudgetsScreen() {
                   const isOverBudget = category.spent > (category.limit || 0);
                   
                   return (
-                    <View key={category.id} style={localStyles.budgetItem}>
+                    <Pressable
+                      key={category.id}
+                      style={localStyles.budgetItem}
+                      onPress={() => navigation.navigate('BudgetDetail', { category })}
+                    >
                       <Text style={localStyles.categoryName}>{category.name}</Text>
                       <View style={localStyles.progressContainer}>
                         <View style={localStyles.progressBar}>
@@ -95,7 +99,7 @@ export default function BudgetsScreen() {
                           / {formatAmount(category.limit || 0)}
                         </Text>
                       </View>
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>
