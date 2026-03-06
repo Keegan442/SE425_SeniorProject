@@ -1,4 +1,21 @@
-import { Month, Category, Expense } from '../data/budgetStore';
+type Category = {
+  id: string
+  name: string
+}
+
+type Expense = {
+  id: string
+  categoryId: string
+  amount: number
+  note?: string
+  date: string
+}
+
+type Month = {
+  income: number
+  expenses: Expense[]
+  categories: Category[]
+}
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -19,7 +36,7 @@ function getCategoryName(categories: Category[], categoryId: string): string {
 
 function sortExpenses(expenses: Expense[]): Expense[] {
   return [...expenses].sort(
-    (a, b) => new Date(b.dateIso).getTime() - new Date(a.dateIso).getTime()
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 }
 
@@ -39,10 +56,10 @@ export function generatePdfHtml(
   const groups: { date: string; items: Expense[] }[] = [];
   for (const expense of sorted) {
     const last = groups[groups.length - 1];
-    if (last && last.date === expense.dateIso) {
+    if (last && last.date === expense.date) {
       last.items.push(expense);
     } else {
-      groups.push({ date: expense.dateIso, items: [expense] });
+      groups.push({ date: expense.date, items: [expense] });
     }
   }
 
@@ -53,7 +70,7 @@ export function generatePdfHtml(
         .map(
           (e) =>
             `<tr>
-              <td style="padding:6px 8px;">${e.dateIso}</td>
+              <td style="padding:6px 8px;">${e.date}</td>
               <td style="padding:6px 8px;">${getCategoryName(categories, e.categoryId)}</td>
               <td style="padding:6px 8px;">${e.note || '-'}</td>
               <td style="padding:6px 8px;text-align:right;color:#DC2626;">-${formatAmount(e.amount)}</td>
@@ -139,7 +156,7 @@ export function generateCsvContent(
   const header = 'Date,Category,Note,Amount';
   const rows = sorted.map((e) => {
     const note = (e.note || '').replace(/"/g, '""');
-    return `${e.dateIso},"${getCategoryName(categories, e.categoryId)}","${note}",-${e.amount.toFixed(2)}`;
+    return `${e.date},"${getCategoryName(categories, e.categoryId)}","${note}",-${e.amount.toFixed(2)}`;
   });
 
   const summary = [
@@ -202,11 +219,11 @@ export function generateYearlyPdfHtml(
   const totalRemaining = totalIncome - totalSpent;
 
   // Sort all expenses by date
-  allExpenses.sort((a, b) => new Date(b.dateIso).getTime() - new Date(a.dateIso).getTime());
+  allExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const transactionRows = allExpenses.map((e) =>
     `<tr>
-      <td style="padding:4px 8px;">${e.dateIso}</td>
+      <td style="padding:4px 8px;">${e.date}</td>
       <td style="padding:4px 8px;">${e.categoryName}</td>
       <td style="padding:4px 8px;">${e.note || '-'}</td>
       <td style="padding:4px 8px;text-align:right;color:#DC2626;">-${formatAmount(e.amount)}</td>
@@ -322,12 +339,12 @@ export function generateYearlyCsvContent(
   }
 
   // Sort expenses by date descending
-  allExpenses.sort((a, b) => new Date(b.dateIso).getTime() - new Date(a.dateIso).getTime());
+  allExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const header = 'Date,Category,Note,Amount';
   const rows = allExpenses.map((e) => {
     const note = (e.note || '').replace(/"/g, '""');
-    return `${e.dateIso},"${getCategoryName(allCategories, e.categoryId)}","${note}",-${e.amount.toFixed(2)}`;
+    return `${e.date},"${getCategoryName(allCategories, e.categoryId)}","${note}",-${e.amount.toFixed(2)}`;
   });
 
   const totalRemaining = totalIncome - totalSpent;

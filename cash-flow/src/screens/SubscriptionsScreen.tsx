@@ -8,16 +8,8 @@ import { Button } from '../components/Button';
 import { useTheme } from '../theme/ThemeContext';
 import { getAppStyles, getColors, spacing } from '../style/appStyles';
 import { AuthContext } from '../auth/AuthContext';
-import { getSubscriptions, Subscription } from '../data/budgetStore';
+import { getSubscriptions, Subscription } from '../api/subscriptionsapi';
 import { useCurrency } from '../theme/CurrencyContext';
-
-const CYCLE_LABELS: Record<string, string> = {
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-  yearly: 'Yearly',
-};
-
-const WEEKS_PER_MONTH = 52 / 12;
 
 export default function SubscriptionsScreen() {
   const { theme, toggleTheme } = useTheme();
@@ -47,11 +39,10 @@ export default function SubscriptionsScreen() {
     }, [loadSubscriptions])
   );
 
-  const monthlyTotal = subscriptions.reduce((sum, sub) => {
-    if (sub.billingCycle === 'weekly') return sum + (sub.amount * WEEKS_PER_MONTH);
-    if (sub.billingCycle === 'yearly') return sum + (sub.amount / 12);
-    return sum + sub.amount;
-  }, 0);
+  const monthlyTotal = subscriptions.reduce(
+    (sum, sub) => sum + sub.amountPerMonth,
+    0
+  );
 
   return (
     <>
@@ -62,6 +53,14 @@ export default function SubscriptionsScreen() {
           <Pressable onPress={toggleTheme} style={styles.themeToggleButton}>
             <Image source={theme === 'dark' ? require('../../assets/images/DarkLogo.png') : require('../../assets/images/LightLogo.png')} style={styles.logoImage} resizeMode="contain" />
           </Pressable>
+        </View>
+
+        <View style={{ marginTop: spacing.lg }}>
+              <Button
+                title="+ Add Subscription"
+                onPress={() => navigation.navigate('AddSubscription')}
+                variant="primary"
+              />
         </View>
 
         <View style={styles.screen}>
@@ -83,27 +82,28 @@ export default function SubscriptionsScreen() {
                     <Pressable
                       key={sub.id}
                       style={localStyles.subItem}
-                      onPress={() => navigation.navigate('SubscriptionDetail', { subscription: sub })}
+                      onPress={() =>
+                        navigation.navigate('SubscriptionDetail', { subscription: sub })
+                      }
                     >
-                      <Text style={localStyles.subName}>{sub.name}</Text>
-                      <Text style={localStyles.subCycle}>{CYCLE_LABELS[sub.billingCycle]}</Text>
-                      <Text style={localStyles.subAmount}>{formatAmount(sub.amount)}</Text>
-                      {sub.nextBillingDate && (
-                        <Text style={localStyles.subDate}>Next: {sub.nextBillingDate}</Text>
-                      )}
+                      <Text style={localStyles.subName}>
+                        {sub.name}
+                      </Text>
+
+                      <Text style={localStyles.subAmount}>
+                        {formatAmount(sub.amountPerMonth)}
+                      </Text>
+
+                      <Text style={localStyles.subDate}>
+                        Started: {sub.startDate ? sub.startDate.split('T')[0]
+                        : ''}
+                      </Text>
                     </Pressable>
                   ))}
                 </View>
               </>
             )}
 
-            <View style={{ marginTop: spacing.lg }}>
-              <Button
-                title="+ Add Subscription"
-                onPress={() => navigation.navigate('AddSubscription')}
-                variant="primary"
-              />
-            </View>
           </ScrollView>
         </View>
       </SafeAreaView>

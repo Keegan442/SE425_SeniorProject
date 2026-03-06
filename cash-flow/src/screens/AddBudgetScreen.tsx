@@ -7,7 +7,8 @@ import { getColors, getAppStyles } from '../style/appStyles';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { AuthContext } from '../auth/AuthContext';
-import { getCategories, saveBudgetLimit, Category } from '../data/budgetStore';
+import { getCategories } from '../api/categoriesApi';
+import { addBudget } from '../api/budgetsApi';
 import { useCurrency } from '../theme/CurrencyContext';
 import { CURRENCIES } from '../utils/currency';
 
@@ -21,7 +22,7 @@ export default function AddBudgetScreen() {
 
   const [limit, setLimit] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -35,8 +36,9 @@ export default function AddBudgetScreen() {
     try {
       const cats = await getCategories(session.userId);
       setCategories(cats);
+
       if (cats.length > 0 && !selectedCategory) {
-        setSelectedCategory(cats[0].id);
+        setSelectedCategory(String(cats[0].category_id));
       }
     } catch (error) {
       console.error('Failed to load categories:', error);
@@ -51,6 +53,7 @@ export default function AddBudgetScreen() {
     }
 
     const numLimit = parseFloat(limit);
+
     if (isNaN(numLimit) || numLimit <= 0) {
       Alert.alert('Invalid Amount', 'Please enter a valid budget limit greater than 0');
       return;
@@ -63,10 +66,23 @@ export default function AddBudgetScreen() {
 
     try {
       setLoading(true);
-      await saveBudgetLimit(session.userId, selectedCategory, numLimit);
-      Alert.alert('Success', 'Budget limit set successfully', [
+
+      const startDate = new Date();
+      const finishDate = new Date();
+      finishDate.setMonth(finishDate.getMonth() + 1);
+
+      await addBudget(
+        session.userId,
+        Number(selectedCategory),
+        numLimit,
+        startDate.toISOString(),
+        finishDate.toISOString()
+      );
+
+      Alert.alert('Success', 'Budget created successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
+
     } catch (error) {
       console.error('Failed to save budget:', error);
       Alert.alert('Error', 'Failed to save budget');
@@ -104,20 +120,20 @@ export default function AddBudgetScreen() {
             <View style={styles.chipGrid}>
               {categories.map((cat) => (
                 <Pressable
-                  key={cat.id}
+                  key={cat.category_id}
                   style={[
                     styles.chip,
-                    selectedCategory === cat.id && styles.chipSelected,
+                    selectedCategory === cat.category_id && styles.chipSelected,
                   ]}
-                  onPress={() => setSelectedCategory(cat.id)}
+                  onPress={() => setSelectedCategory(cat.category_id)}
                 >
                   <Text
                     style={[
                       styles.chipText,
-                      selectedCategory === cat.id && styles.chipTextSelected,
+                      selectedCategory === cat.category_id && styles.chipTextSelected,
                     ]}
                   >
-                    {cat.name}
+                    {cat.category_name}
                   </Text>
                 </Pressable>
               ))}

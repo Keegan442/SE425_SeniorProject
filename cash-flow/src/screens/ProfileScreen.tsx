@@ -10,10 +10,20 @@ import { Menu } from '../components/Menu';
 import { MenuButton } from '../components/MenuButton';
 import { useTheme } from '../theme/ThemeContext';
 import { getAppStyles, getColors, spacing } from '../style/appStyles';
-import { getUserProfile, saveUserProfile, UserProfile } from '../data/profileStore';
+import { getUserProfile, saveUserProfile, UserProfile } from '../api/profileApi';
 import { useCurrency } from '../theme/CurrencyContext';
 import { CURRENCIES, CURRENCY_OPTIONS } from '../utils/currency';
 import { AVATARS, isEmojiAvatar, getEmojiFromAvatar, createAvatarString } from '../utils/avatars';
+
+function formatBirthdayForSave(input: string | null): string | null {
+  if (!input) return null;
+
+  const cleaned = input.trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) return null;
+
+  return cleaned;
+}
 
 export default function ProfileScreen() {
   const { session } = useContext(AuthContext);
@@ -25,7 +35,8 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<UserProfile>({ firstName: '', lastName: '', profilePicture: null, birthday: null, currency: 'USD' });
+  const [profile, setProfile] = useState<UserProfile>({ firstName: '', lastName: '', profilePicture: null, birthday: null, currency: 'USD', username: '',
+  email: '' });
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [birthday, setBirthday] = useState('');
@@ -47,7 +58,11 @@ export default function ProfileScreen() {
       setProfile(userProfile);
       setFirstName(userProfile.firstName);
       setLastName(userProfile.lastName);
-      setBirthday(userProfile.birthday ?? '');
+      setBirthday(
+        userProfile.birthday
+          ? userProfile.birthday.split('T')[0]
+          : ''
+      );
       setCurrency(userProfile.currency ?? 'USD');
     } catch (error) {
       Alert.alert('Error', 'Failed to load profile');
@@ -57,23 +72,31 @@ export default function ProfileScreen() {
   }
 
   async function handleSave() {
-    if (!session?.userId) return;
+    if (!session) return;
+
     try {
       setSaving(true);
-      const updatedProfile: UserProfile = {
+
+      const updatedProfile: UserProfile & { username?: string } = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         profilePicture: profile.profilePicture,
-        birthday: birthday.trim() || null,
+        birthday: formatBirthdayForSave(birthday),
         currency: currency || 'USD',
+        username: profile.username || '',
+        email: profile.email || '',
       };
-      await saveUserProfile(session.userId, updatedProfile);
+
+      await saveUserProfile(session, updatedProfile);
+
       setProfile(updatedProfile);
       setIsEditing(false);
+
       await refreshCurrency();
       Alert.alert('Success', 'Profile updated successfully');
     } catch (error) {
-      Alert.alert('Error', 'Failed to save profile');
+      console.error('Failed profile save response:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save profile');
     } finally {
       setSaving(false);
     }
@@ -151,7 +174,7 @@ export default function ProfileScreen() {
   function handleCancel() {
     setFirstName(profile.firstName);
     setLastName(profile.lastName);
-    setBirthday(profile.birthday ?? '');
+    setBirthday(profile.birthday ? profile.birthday.split('T')[0] : '');
     setCurrency(profile.currency ?? 'USD');
     setIsEditing(false);
   }
@@ -280,7 +303,9 @@ export default function ProfileScreen() {
                 {(profile.birthday ?? '').trim() ? (
                   <View style={styles.centerBlockMarginTop}>
                     <Text style={styles.muted}>Birthday</Text>
-                    <Text style={[styles.body, styles.bodyTop4]}>{profile.birthday}</Text>
+                    <Text style={[styles.body, styles.bodyTop4]}>
+                      {profile.birthday ? profile.birthday.split('T')[0] : 'Not set'}
+                    </Text>
                   </View>
                 ) : null}
                 <View style={styles.centerBlockMarginTop}>
@@ -295,14 +320,14 @@ export default function ProfileScreen() {
             <View style={styles.centerBlockMarginTop}>
               <Text style={styles.muted}>Username</Text>
               <Text style={[styles.body, styles.bodyTop4Muted]}>
-                {session?.userId || 'Not available'}
+                {profile.username || 'Not available'}
               </Text>
             </View>
 
             <View style={styles.centerBlockMarginTop}>
               <Text style={styles.muted}>Email</Text>
               <Text style={[styles.body, styles.bodyTop4Muted]}>
-                {session?.email || 'Not available'}
+                {profile.email || 'Not available'}
               </Text>
             </View>
           </View>

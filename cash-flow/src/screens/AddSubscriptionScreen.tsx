@@ -8,7 +8,7 @@ import { getColors, getAppStyles, spacing } from '../style/appStyles';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { AuthContext } from '../auth/AuthContext';
-import { addSubscription } from '../data/budgetStore';
+import { addSubscription } from '../api/subscriptionsapi';
 import { useCurrency } from '../theme/CurrencyContext';
 import { CURRENCIES } from '../utils/currency';
 import { isoDate } from '../utils/date';
@@ -59,17 +59,29 @@ export default function AddSubscriptionScreen() {
       return;
     }
 
+    let monthlyAmount = numAmount;
+
+    if (billingCycle === 'weekly') {
+      monthlyAmount = numAmount * 4.33;
+    }
+
+    if (billingCycle === 'yearly') {
+      monthlyAmount = numAmount / 12;
+    }
+
     try {
       setLoading(true);
+
       await addSubscription(session.userId, {
         name: name.trim(),
-        amount: numAmount,
-        billingCycle,
-        nextBillingDate: nextBillingDate ? isoDate(nextBillingDate) : undefined,
+        amountPerMonth: monthlyAmount,
+        startDate: nextBillingDate ? isoDate(nextBillingDate) : undefined,
       });
+
       Alert.alert('Success', 'Subscription added successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
+
     } catch (error) {
       console.error('Failed to save subscription:', error);
       Alert.alert('Error', 'Failed to save subscription');
@@ -149,10 +161,10 @@ export default function AddSubscriptionScreen() {
               ))}
             </View>
 
-            {/* Next Billing Date */}
+            {/* Start Date */}
             <View style={styles.formSectionMargin}>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: '600', marginBottom: 8 }}>
-                Next Billing Date 
+                Billing Start Date 
               </Text>
               <Pressable
                 onPress={() => {
