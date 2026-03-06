@@ -1,4 +1,10 @@
-import type { Expense, Subscription, Category } from '../data/budgetStore';
+import type { Expense, Subscription, Category } from '../types/models';
+import { Budget } from '../api/budgetsApi';
+
+export type BudgetWithMeta = Budget & {
+  categoryName: string;
+  spent: number;
+};
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -15,9 +21,10 @@ export type RootStackParamList = {
   AddBudget: undefined;
   AddSubscription: undefined;
   AddIncome: undefined;
+  AddCategory: undefined;
   TransactionDetail: { expense: Expense; categoryName: string; monthKey: string };
   SubscriptionDetail: { subscription: Subscription };
-  BudgetDetail: { category: Category & { spent: number } };
+  BudgetDetail: { budget: BudgetWithMeta };
 };
 
 declare global {

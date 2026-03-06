@@ -23,6 +23,7 @@ import AddIncomeScreen from './src/screens/AddIncomeScreen';
 import TransactionDetailScreen from './src/screens/TransactionDetailScreen';
 import SubscriptionDetailScreen from './src/screens/SubscriptionDetailScreen';
 import BudgetDetailScreen from './src/screens/BudgetDetailScreen';
+import AddCategoryScreen from './src/screens/AddCategoryScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -53,6 +54,7 @@ function AppStack() {
       <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
       <Stack.Screen name="SubscriptionDetail" component={SubscriptionDetailScreen} />
       <Stack.Screen name="BudgetDetail" component={BudgetDetailScreen} />
+      <Stack.Screen name="AddCategory" component={AddCategoryScreen} />
     </Stack.Navigator>
   );
 }

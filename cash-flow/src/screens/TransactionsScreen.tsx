@@ -9,9 +9,12 @@ import { SearchBar } from '../components/SearchBar';
 import { useTheme } from '../theme/ThemeContext';
 import { getAppStyles, getColors, spacing } from '../style/appStyles';
 import { AuthContext } from '../auth/AuthContext';
-import { getMonthData, Expense, Category } from '../data/budgetStore';
+import { getTransactions } from '../api/transactionsApi';
+import { getCategories } from '../api/categoriesApi';
+import type { Expense, Category } from '../types/models';
 import { useCurrency } from '../theme/CurrencyContext';
 import { monthKey, shiftMonth } from '../utils/date';
+
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -46,13 +49,34 @@ export default function TransactionsScreen() {
 
   const loadTransactions = useCallback(async () => {
     if (!session?.userId) return;
+
     try {
-      const { month } = await getMonthData(session.userId, selectedMonth);
-      setExpenses(month.expenses || []);
-      setCategories(month.categories || []);
+      const [transactionsData, categoriesData] = await Promise.all([
+        getTransactions(session.userId, selectedMonth),
+        getCategories(session.userId),
+      ]);
+
+      const mappedTransactions: Expense[] = transactionsData.map((t: any) => ({
+        id: String(t.transaction_id),
+        amount: Number(t.transaction_amount),
+        categoryId: String(t.category_id),
+        note: t.transaction_name || undefined,
+        dateIso: t.transaction_date,
+      }));
+
+      const mappedCategories: Category[] = categoriesData.map((c: any) => ({
+        id: String(c.category_id),
+        name: c.category_name,
+        description: c.category_desc,
+        type: c.category_type,
+      }));
+
+      setExpenses(mappedTransactions);
+      setCategories(mappedCategories);
+
     } catch (error) {
       console.error('Failed to load transactions:', error);
-      Alert.alert('Error', 'Failed to load transactions. Please try again.');
+      Alert.alert('Error', 'Failed to load transactions.');
     }
   }, [session?.userId, selectedMonth]);
 
@@ -66,6 +90,11 @@ export default function TransactionsScreen() {
     const category = categories.find(c => c.id === categoryId);
     return category?.name || 'Unknown';
   }, [categories]);
+  const getCategoryType = (categoryId: string): 'income' | 'expense' => {
+    const category = categories.find((c) => c.id === categoryId);
+    return category?.type ?? 'expense';
+  };
+
   const isCurrentMonth = selectedMonth === monthKey();
 
   useEffect(() => {
@@ -115,6 +144,14 @@ export default function TransactionsScreen() {
           </Pressable>
         </View>
 
+        <View style={{ marginTop: spacing.lg }}>
+              <Button
+                title="+ Add Transaction"
+                onPress={() => navigation.navigate('AddTransaction')}
+                variant="primary"
+              />
+        </View>
+
         {/* Month Selector */}
         <View style={styles.monthSelector}>
           <Pressable onPress={() => setSelectedMonth(shiftMonth(selectedMonth, -1))} style={styles.monthArrow}>
@@ -156,6 +193,12 @@ export default function TransactionsScreen() {
                   <Text style={[styles.chipText, filterCategory === cat.id && styles.chipTextSelected]}>{cat.name}</Text>
                 </Pressable>
               ))}
+              <Pressable
+                style={localStyles.addCategoryButton}
+                onPress={() => navigation.navigate('AddCategory')}
+              >
+                <Text style={localStyles.addCategoryPlus}>+</Text>
+              </Pressable>
             </ScrollView>
             {groupedExpenses.length === 0 ? (
               <View style={styles.card}>
@@ -185,8 +228,16 @@ export default function TransactionsScreen() {
                             {expense.note}
                           </Text>
                         ) : null}
-                        <Text style={localStyles.transactionAmount}>
-                          -{formatAmount(expense.amount)}
+                        <Text
+                          style={[
+                            localStyles.transactionAmount,
+                            getCategoryType(expense.categoryId) === 'income'
+                              ? localStyles.incomeAmount
+                              : localStyles.expenseAmount,
+                          ]}
+                        >
+                          {getCategoryType(expense.categoryId) === 'income' ? '+' : '-'}
+                          {formatAmount(expense.amount)}
                         </Text>
                       </Pressable>
                     ))}
@@ -195,13 +246,6 @@ export default function TransactionsScreen() {
               ))
             )}
 
-            <View style={{ marginTop: spacing.lg }}>
-              <Button
-                title="+ Add Transaction"
-                onPress={() => navigation.navigate('AddTransaction')}
-                variant="primary"
-              />
-            </View>
           </ScrollView>
         </View>
       </SafeAreaView>
@@ -248,6 +292,29 @@ function createLocalStyles(colors: ReturnType<typeof getColors>) {
       color: colors.danger,
       textAlign: 'center',
       marginTop: spacing.sm,
+    },
+    addCategoryButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: 6,
+    },
+    addCategoryPlus: {
+      fontSize: 22,
+      fontWeight: '600',
+      color: colors.text,
+      lineHeight: 22,
+    },
+    incomeAmount: {
+      color: '#16a34a',
+    },
+
+    expenseAmount: {
+      color: '#dc2626',
     },
   });
 }

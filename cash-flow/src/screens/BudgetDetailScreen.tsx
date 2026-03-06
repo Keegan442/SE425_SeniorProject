@@ -6,49 +6,69 @@ import { useTheme } from '../theme/ThemeContext';
 import { getColors, getAppStyles, spacing } from '../style/appStyles';
 import { Button } from '../components/Button';
 import { AuthContext } from '../auth/AuthContext';
-import { clearBudgetLimit } from '../data/budgetStore';
+import { toggleBudgetActive, deleteBudget } from '../api/budgetsApi';
 import { useCurrency } from '../theme/CurrencyContext';
 import type { RootStackParamList } from '../navigation/types';
 
-type RouteParams = RouteProp<RootStackParamList, 'BudgetDetail'>;
+type BudgetDetailRoute = RouteProp<RootStackParamList, 'BudgetDetail'>;
+
+type BudgetWithMeta = {
+  budgetId: number;
+  categoryName: string;
+  spent: number;
+  limitAmount: number;
+  isActive: boolean;
+};
 
 export default function BudgetDetailScreen() {
   const { theme, toggleTheme } = useTheme();
   const { session } = useContext(AuthContext);
   const { formatAmount } = useCurrency();
   const navigation = useNavigation();
-  const route = useRoute<RouteParams>();
-  const { category } = route.params;
+  const route = useRoute<BudgetDetailRoute>();
+  const { budget } = route.params;
+  const [active, setActive] = useState(budget.isActive);
   const colors = getColors(theme);
   const styles = getAppStyles(colors);
   const local = createLocalStyles(colors);
   const [deleting, setDeleting] = useState(false);
 
-  const limit = category.limit || 0;
-  const remaining = limit - category.spent;
-  const pct = limit > 0 ? Math.min(category.spent / limit, 1) : 0;
-  const overBudget = category.spent > limit;
+  const limit = budget.limitAmount;
+  const remaining = limit - budget.spent;
+  const pct = limit > 0 ? Math.min(budget.spent / limit, 1) : 0;
+  const overBudget = budget.spent > limit;
 
-  function handleDelete() {
-    Alert.alert('Remove Budget Limit', `Remove the budget limit for "${category.name}"?`, [
+  async function handleDelete() {
+    Alert.alert('Delete Budget', `Delete the budget for "${budget.categoryName}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Remove',
+        text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          if (!session?.userId) return;
           try {
             setDeleting(true);
-            await clearBudgetLimit(session.userId, category.id);
+            await deleteBudget(budget.budgetId);
             navigation.goBack();
           } catch {
-            Alert.alert('Error', 'Failed to remove budget limit');
+            Alert.alert('Error', 'Failed to delete budget');
           } finally {
             setDeleting(false);
           }
         },
       },
     ]);
+  }
+
+  async function handleToggleActive() {
+    try {
+      const newState = !active;
+
+      await toggleBudgetActive(budget.budgetId, newState);
+
+      setActive(newState);
+    } catch {
+      Alert.alert('Error', 'Failed to update budget status');
+    }
   }
 
   return (
@@ -71,7 +91,10 @@ export default function BudgetDetailScreen() {
       <View style={styles.screen}>
         <View style={styles.card}>
           <Text style={[styles.formSectionTitle, { marginBottom: 4 }]}>Category</Text>
-          <Text style={styles.h2}>{category.name}</Text>
+          <Text style={styles.h2}>{budget.categoryName}</Text>
+          <Text style={{ color: active ? colors.ok : colors.muted }}>
+            {active ? 'Active Budget' : 'Inactive Budget'}
+          </Text>
 
           <Text style={[styles.formSectionTitle, styles.formSectionMargin, { marginBottom: 4 }]}>Limit</Text>
           <Text style={styles.h2Large}>{formatAmount(limit)}</Text>
@@ -85,7 +108,7 @@ export default function BudgetDetailScreen() {
             <View>
               <Text style={styles.formSectionTitle}>Spent</Text>
               <Text style={[styles.h2, { color: overBudget ? colors.danger : colors.text }]}>
-                {formatAmount(category.spent)}
+                {formatAmount(budget.spent)}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
@@ -97,10 +120,18 @@ export default function BudgetDetailScreen() {
           </View>
         </View>
 
+        <View style={styles.formButtonContainer}>
+          <Button
+            title={active ? "Deactivate Budget" : "Activate Budget"}
+            onPress={handleToggleActive}
+            variant="outline"
+          />
+        </View>
+
         {/* Delete Button */}
         <View style={styles.formButtonContainer}>
           <Button
-            title="Remove Budget Limit"
+            title="Delete Budget"
             onPress={handleDelete}
             disabled={deleting}
             loading={deleting}

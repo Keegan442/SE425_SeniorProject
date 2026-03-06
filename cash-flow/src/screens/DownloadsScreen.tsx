@@ -11,11 +11,33 @@ import { Button } from '../components/Button';
 import { useTheme } from '../theme/ThemeContext';
 import { getAppStyles, getColors, spacing } from '../style/appStyles';
 import { AuthContext } from '../auth/AuthContext';
-import { getMonthData, getYearData, Month } from '../data/budgetStore';
+import { getTransactions } from '../api/transactionsApi';
+import { getCategories } from '../api/categoriesApi';
+import { getSubscriptions, Subscription } from '../api/subscriptionsapi';
 import { useCurrency } from '../theme/CurrencyContext';
 import { monthKey, shiftMonth } from '../utils/date';
 import { generatePdfHtml, generateCsvContent, generateYearlyPdfHtml, generateYearlyCsvContent, formatMonthLabel } from '../utils/exportReport';
-import { sumExpenses } from '../data/budgetMath';
+
+type Month = {
+  income: number;
+  expenses: {
+    id: string;
+    categoryId: string;
+    amount: number;
+    note?: string;
+    date: string;
+  }[];
+  categories: {
+    id: string;
+    name: string;
+  }[];
+};
+
+type ApiCategory = {
+  category_id: number;
+  category_name: string;
+  category_type: 'income' | 'expense';
+};
 
 export default function DownloadsScreen() {
   const { theme, toggleTheme } = useTheme();
@@ -32,26 +54,87 @@ export default function DownloadsScreen() {
 
   const loadData = useCallback(async () => {
     if (!session?.userId) return;
+
     try {
-      const { month } = await getMonthData(session.userId, selectedMonth);
+      const transactions = await getTransactions(session.userId, selectedMonth);
+      const subscriptions = await getSubscriptions(session.userId);
+      const cats = await getCategories(session.userId);
+
+      const mappedCats: { id: string; name: string }[] = cats.map((cat: ApiCategory) => ({
+        id: String(cat.category_id),
+        name: cat.category_name
+      }));
+
+      const categoryMap: Record<string, 'income' | 'expense'> = {};
+
+      cats.forEach((cat: ApiCategory) => {
+        categoryMap[String(cat.category_id)] = cat.category_type;
+      });
+
+      let income = 0;
+
+      const expenses: Month['expenses'] = [];
+
+      transactions.forEach((t: any) => {
+        const type = categoryMap[String(t.category_id)];
+        const amount = Number(t.transaction_amount);
+
+        if (type === 'income') {
+          income += amount;
+        } else if (type === 'expense') {
+          expenses.push({
+            id: String(t.transaction_id),
+            categoryId: String(t.category_id),
+            amount,
+            note: t.transaction_name,
+            date: t.transaction_date,
+          });
+        } else {
+          console.warn(`Unknown category type for transaction ${t.transaction_id}:`, t.category_id, type);
+        }
+      });
+
+      mappedCats.push({ id: 'subscription', name: 'Subscriptions' });
+
+      subscriptions.forEach((sub: Subscription) => {
+        expenses.push({
+          id: `sub-${sub.id}`,
+          categoryId: 'subscription',
+          amount: sub.amountPerMonth,
+          note: sub.name + ' (Subscription)',
+          date: sub.startDate
+        });
+      });
+
+      const month: Month = {
+        income,
+        expenses,
+        categories: mappedCats
+      };
+
       setMonthData(month);
 
       const totals: Record<string, number> = {};
-      for (const exp of month.expenses) {
+      for (const exp of expenses) {
         totals[exp.categoryId] = (totals[exp.categoryId] || 0) + exp.amount;
       }
+
       setCategoryBreakdown(
-        month.categories
-          .filter(cat => totals[cat.id])
-          .map(cat => ({ name: cat.name, total: totals[cat.id] }))
+        mappedCats
+          .filter((cat: { id: string; name: string }) => totals[cat.id])
+          .map((cat: { id: string; name: string }) => ({
+            name: cat.name,
+            total: totals[cat.id]
+          }))
           .sort((a, b) => b.total - a.total)
       );
+
     } catch (error) {
       console.error('Failed to load month data:', error);
-      Alert.alert('Error', 'Failed to load report data. Please try again.');
+      Alert.alert('Error', 'Failed to load report data.');
     }
   }, [session?.userId, selectedMonth]);
-
+  
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -60,8 +143,8 @@ export default function DownloadsScreen() {
 
   const isCurrentMonth = selectedMonth === monthKey();
   const label = formatMonthLabel(selectedMonth);
-  const totalSpent = monthData ? sumExpenses(monthData.expenses) : 0;
   const income = monthData?.income || 0;
+  const totalSpent = monthData ? monthData.expenses.reduce((sum, e) => sum + e.amount, 0) : 0;
   const remaining = income - totalSpent;
   const transactionCount = monthData?.expenses?.length || 0;
 
@@ -105,22 +188,42 @@ export default function DownloadsScreen() {
 
   async function handleExportYearPdf() {
     if (!session?.userId) return;
+
     try {
       setExporting('year-pdf');
-      const { months } = await getYearData(session.userId, selectedYear);
+
+      const months: Record<string, any> = {};
+
+      for (let m = 1; m <= 12; m++) {
+        const monthKey = `${selectedYear}-${String(m).padStart(2, '0')}`;
+        const data = await getTransactions(session.userId, monthKey);
+
+        if (data.length > 0) {
+          months[monthKey] = data;
+        }
+      }
+
       if (Object.keys(months).length === 0) {
         Alert.alert('No Data', `No transactions found for ${selectedYear}.`);
         return;
       }
+
       const html = generateYearlyPdfHtml(months, formatAmount, selectedYear);
       const { uri } = await Print.printToFileAsync({ html });
+
       const tempPdf = new File(uri);
       const namedPdf = new File(Paths.cache, `cashflow_${selectedYear}.pdf`);
+
       if (namedPdf.exists) namedPdf.delete();
       tempPdf.move(namedPdf);
-      await shareAsync(namedPdf.uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+
+      await shareAsync(namedPdf.uri, {
+        UTI: '.pdf',
+        mimeType: 'application/pdf'
+      });
+
     } catch (error) {
-      console.error('Failed to generate yearly PDF:', error);
+      console.error(error);
       Alert.alert('Error', 'Failed to generate yearly PDF');
     } finally {
       setExporting(null);
@@ -129,20 +232,36 @@ export default function DownloadsScreen() {
 
   async function handleExportYearCsv() {
     if (!session?.userId) return;
+
     try {
       setExporting('year-csv');
-      const { months } = await getYearData(session.userId, selectedYear);
+
+      const months: Record<string, any> = {};
+
+      for (let m = 1; m <= 12; m++) {
+        const monthKey = `${selectedYear}-${String(m).padStart(2, '0')}`;
+        const data = await getTransactions(session.userId, monthKey);
+
+        if (data.length > 0) {
+          months[monthKey] = data;
+        }
+      }
+
       if (Object.keys(months).length === 0) {
         Alert.alert('No Data', `No transactions found for ${selectedYear}.`);
         return;
       }
+
       const csv = generateYearlyCsvContent(months, selectedYear);
+
       const file = new File(Paths.cache, `cashflow_${selectedYear}.csv`);
       file.create({ overwrite: true });
       file.write(csv);
+
       await shareAsync(file.uri, { mimeType: 'text/csv' });
+
     } catch (error) {
-      console.error('Failed to generate yearly CSV:', error);
+      console.error(error);
       Alert.alert('Error', 'Failed to generate yearly CSV');
     } finally {
       setExporting(null);

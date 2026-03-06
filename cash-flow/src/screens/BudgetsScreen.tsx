@@ -8,10 +8,17 @@ import { Button } from '../components/Button';
 import { useTheme } from '../theme/ThemeContext';
 import { getAppStyles, getColors, spacing } from '../style/appStyles';
 import { AuthContext } from '../auth/AuthContext';
-import { getCategoriesWithSpent, Category } from '../data/budgetStore';
+import { getBudgets, Budget } from '../api/budgetsApi';
+import { getCategories } from '../api/categoriesApi';
+import { getTransactions } from '../api/transactionsApi';
 import { useCurrency } from '../theme/CurrencyContext';
+import { monthKey } from '../utils/date';
+import { getBudgetColor } from '../utils/getBudgetColor';
 
-type CategoryWithSpent = Category & { spent: number };
+type BudgetWithSpent = Budget & {
+  categoryName: string;
+  spent: number;
+};
 
 export default function BudgetsScreen() {
   const { theme, toggleTheme } = useTheme();
@@ -21,14 +28,41 @@ export default function BudgetsScreen() {
   const styles = getAppStyles(colors);
   const localStyles = createLocalStyles(colors);
   const navigation = useNavigation();
+
   const [menuVisible, setMenuVisible] = useState(false);
-  const [categories, setCategories] = useState<CategoryWithSpent[]>([]);
+  const [budgets, setBudgets] = useState<BudgetWithSpent[]>([]);
 
   const loadBudgets = useCallback(async () => {
     if (!session?.userId) return;
+
     try {
-      const cats = await getCategoriesWithSpent(session.userId);
-      setCategories(cats);
+      const [budgetsData, categories, transactions] = await Promise.all([
+        getBudgets(session.userId),
+        getCategories(session.userId),
+        getTransactions(session.userId, monthKey()),
+      ]);
+
+      const categoryMap: Record<number, string> = {};
+      categories.forEach((c: any) => {
+        categoryMap[c.category_id] = c.category_name;
+      });
+
+      const spentMap: Record<number, number> = {};
+
+      transactions.forEach((t: any) => {
+        const catId = Number(t.category_id);
+        const amount = Number(t.transaction_amount) || 0;
+
+        spentMap[catId] = (spentMap[catId] || 0) + amount;
+      });
+
+      const combined: BudgetWithSpent[] = budgetsData.map((b) => ({
+        ...b,
+        categoryName: categoryMap[b.categoryId] || 'Unknown',
+        spent: spentMap[b.categoryId] || 0,
+      }));
+
+      setBudgets(combined);
     } catch (error) {
       console.error('Failed to load budgets:', error);
       Alert.alert('Error', 'Failed to load budgets. Please try again.');
@@ -41,62 +75,94 @@ export default function BudgetsScreen() {
     }, [loadBudgets])
   );
 
-  const budgetsWithLimits = categories.filter(c => c.limit && c.limit > 0);
-
   return (
     <>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.screenHeaderRow}>
           <MenuButton onPress={() => setMenuVisible(true)} />
           <Text style={styles.title}>Budgets</Text>
+
           <Pressable onPress={toggleTheme} style={styles.themeToggleButton}>
             <Image
-              source={theme === 'dark' ? require('../../assets/images/DarkLogo.png') : require('../../assets/images/LightLogo.png')}
+              source={
+                theme === 'dark'
+                  ? require('../../assets/images/DarkLogo.png')
+                  : require('../../assets/images/LightLogo.png')
+              }
               style={styles.logoImage}
               resizeMode="contain"
             />
           </Pressable>
         </View>
 
+        <View style={{ marginTop: spacing.lg }}>
+              <Button
+                title="+ Set Budget"
+                onPress={() => navigation.navigate('AddBudget')}
+                variant="primary"
+              />
+        </View>
+
         <View style={styles.screen}>
-          <ScrollView contentContainerStyle={styles.scrollContentBottom} showsVerticalScrollIndicator={false}>
-            {budgetsWithLimits.length === 0 ? (
+          <ScrollView
+            contentContainerStyle={styles.scrollContentBottom}
+            showsVerticalScrollIndicator={false}
+          >
+            {budgets.length === 0 ? (
               <View style={styles.card}>
                 <Text style={styles.h2}>Budgets</Text>
-                <Text style={[styles.muted, styles.marginTopMd]}>No budgets set yet. Set your first one!</Text>
+                <Text style={[styles.muted, styles.marginTopMd]}>
+                  No budgets set yet. Set your first one!
+                </Text>
               </View>
             ) : (
               <View style={styles.card}>
-                {budgetsWithLimits.map((category) => {
-                  const percentage = category.limit ? Math.min((category.spent / category.limit) * 100, 100) : 0;
-                  const isOverBudget = category.spent > (category.limit || 0);
-                  
+                {budgets.map((budget) => {
+                  const percentage = Math.min(
+                    (budget.spent / budget.limitAmount) * 100,
+                    100
+                  );
+
+                  const isOverBudget = budget.spent > budget.limitAmount;
+
                   return (
                     <Pressable
-                      key={category.id}
+                      key={budget.budgetId}
                       style={localStyles.budgetItem}
-                      onPress={() => navigation.navigate('BudgetDetail', { category })}
+                      onPress={() =>
+                        navigation.navigate('BudgetDetail', { budget })
+                      }
                     >
-                      <Text style={localStyles.categoryName}>{category.name}</Text>
+                      <Text style={localStyles.categoryName}>
+                        {budget.categoryName}
+                      </Text>
+
                       <View style={localStyles.progressContainer}>
                         <View style={localStyles.progressBar}>
-                          <View 
+                          <View
                             style={[
                               localStyles.progressFill,
-                              { 
+                              {
                                 width: `${percentage}%`,
-                                backgroundColor: isOverBudget ? colors.danger : colors.ok 
-                              }
-                            ]} 
+                                backgroundColor: getBudgetColor(percentage / 100, colors)
+                              },
+                            ]}
                           />
                         </View>
                       </View>
+
                       <View style={localStyles.amountRow}>
-                        <Text style={[localStyles.spent, isOverBudget && { color: colors.danger }]}>
-                          {formatAmount(category.spent)}
+                        <Text
+                          style={[
+                            localStyles.spent,
+                            isOverBudget && { color: colors.danger },
+                          ]}
+                        >
+                          {formatAmount(budget.spent)}
                         </Text>
+
                         <Text style={localStyles.limit}>
-                          / {formatAmount(category.limit || 0)}
+                          / {formatAmount(budget.limitAmount)}
                         </Text>
                       </View>
                     </Pressable>
@@ -105,16 +171,10 @@ export default function BudgetsScreen() {
               </View>
             )}
 
-            <View style={{ marginTop: spacing.lg }}>
-              <Button
-                title="+ Set Budget"
-                onPress={() => navigation.navigate('AddBudget')}
-                variant="primary"
-              />
-            </View>
           </ScrollView>
         </View>
       </SafeAreaView>
+
       <Menu visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </>
   );

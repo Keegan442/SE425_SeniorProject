@@ -6,7 +6,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { getColors, getAppStyles } from '../style/appStyles';
 import { Button } from '../components/Button';
 import { AuthContext } from '../auth/AuthContext';
-import { deleteExpense } from '../data/budgetStore';
+import { deleteTransaction } from '../api/transactionsApi';
 import { useCurrency } from '../theme/CurrencyContext';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -33,7 +33,7 @@ export default function TransactionDetailScreen() {
           if (!session?.userId) return;
           try {
             setDeleting(true);
-            await deleteExpense(session.userId, expense.id, monthKey);
+            await deleteTransaction(expense.id);
             navigation.goBack();
           } catch {
             Alert.alert('Error', 'Failed to delete transaction');
@@ -71,7 +71,7 @@ export default function TransactionDetailScreen() {
           <Text style={styles.h2}>{categoryName}</Text>
 
           <Text style={[styles.formSectionTitle, styles.formSectionMargin, { marginBottom: 4 }]}>Date</Text>
-          <Text style={styles.h2}>{expense.dateIso}</Text>
+          <Text style={styles.h2}>{expense.dateIso ? expense.dateIso.split('T')[0] : ''}</Text>
 
           {expense.note ? (
             <>

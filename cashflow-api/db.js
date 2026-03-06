@@ -1,11 +1,12 @@
+require('dotenv').config();
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  host: 'cash-flow-db.cleo2qu48ata.us-east-2.rds.amazonaws.com',
-  port: 5432,
-  user: 'dbadmin',
-  password: 'Cashflow1234*',
-  database: 'cashflow',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   ssl: { rejectUnauthorized: false }
 });
 

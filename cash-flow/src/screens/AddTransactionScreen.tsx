@@ -8,10 +8,18 @@ import { getColors, getAppStyles, spacing } from '../style/appStyles';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { AuthContext } from '../auth/AuthContext';
-import { addExpense, getCategories, Category } from '../data/budgetStore';
+import { getCategories } from '../api/categoriesApi';
+import { addTransaction } from '../api/transactionsApi';
 import { useCurrency } from '../theme/CurrencyContext';
 import { CURRENCIES } from '../utils/currency';
 import { isoDate } from '../utils/date';
+
+type Category = {
+  id: string;
+  name: string;
+  description?: string;
+  type: 'income' | 'expense';
+};
 
 export default function AddTransactionScreen() {
   const { theme, toggleTheme } = useTheme();
@@ -42,15 +50,24 @@ export default function AddTransactionScreen() {
 
   async function loadCategories() {
     if (!session?.userId) return;
+
     try {
-      const cats = await getCategories(session.userId);
-      setCategories(cats);
-      if (cats.length > 0 && !selectedCategory) {
-        setSelectedCategory(cats[0].id);
+      const data = await getCategories(session.userId);
+
+      const mapped = data.map((c: any) => ({
+        id: String(c.category_id),
+        name: c.category_name,
+        description: c.category_desc,
+        type: c.category_type,
+      }));
+
+      setCategories(mapped);
+
+      if (mapped.length > 0 && !selectedCategory) {
+        setSelectedCategory(mapped[0].id);
       }
     } catch (error) {
-      console.error('Failed to load categories:', error);
-      Alert.alert('Error', 'Failed to load categories. Please try again.');
+      Alert.alert('Error', 'Failed to load categories');
     }
   }
 
@@ -67,22 +84,22 @@ export default function AddTransactionScreen() {
     }
 
     if (!selectedCategory) {
-      Alert.alert('Select Category', 'Please select a category for this transaction');
+      Alert.alert('Select Category', 'Please select a category');
       return;
     }
 
     try {
       setLoading(true);
-      await addExpense(session.userId, {
-        amount: numAmount,
-        categoryId: selectedCategory,
-        note: note.trim() || undefined,
-        dateIso: isoDate(date),
-      });
 
-      Alert.alert('Success', 'Transaction added successfully', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      await addTransaction(
+        session.userId,
+        numAmount,
+        selectedCategory,
+        note.trim() || 'New Transaction',
+        isoDate(date)
+      );
+
+      navigation.goBack();
     } catch (error) {
       console.error('Failed to save transaction:', error);
       Alert.alert('Error', 'Failed to save transaction');

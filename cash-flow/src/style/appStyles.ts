@@ -202,6 +202,11 @@ export function getAppStyles(themeColors: Colors) {
     },
     chipText: { fontSize: 12, fontWeight: '600', color: themeColors.muted },
     chipTextSelected: { color: themeColors.white },
+    chipRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 16,
+    },
 
     // Month Selector
     monthSelector: {
