@@ -1,4 +1,4 @@
-const API_URL = "http://3.137.201.93:3000";
+const API_URL = "https://api.cashflowapi.dev";
 import { Session } from '../auth/authStore';
 
 export type UserProfile = {

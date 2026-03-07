@@ -6,7 +6,7 @@ export interface Session {
   email: string;
 }
 
-const API_URL = "http://3.137.201.93:3000"; 
+const API_URL = "https://api.cashflowapi.dev"; 
 
 function normalizeEmail(email: string): string {
   return String(email || '').trim().toLowerCase();
