@@ -20,6 +20,7 @@
       }
     },
     "android": {
+      "buildType": "apk",
       "adaptiveIcon": {
         "backgroundColor": "#0B0D10",
         "foregroundImage": "./assets/images/DarkLogo.png",
