@@ -21,7 +21,11 @@
         "monochromeImage": "./assets/images/DarkLogo.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.CashFlow"
     },
     "web": {
       "output": "single",
@@ -48,6 +52,11 @@
         }
       ],
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "537205ac-3987-488c-a267-81df3eb46d04"
+      }
+    }
   }
 }
