@@ -6,7 +6,7 @@ export interface Session {
   email: string;
 }
 
-const API_URL = "http://ec2-3.137.201.93.compute-1.amazonaws.com:3000"; 
+const API_URL = "http://3.137.201.93:3000"; 
 
 function normalizeEmail(email: string): string {
   return String(email || '').trim().toLowerCase();
