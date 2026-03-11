@@ -118,6 +118,9 @@ export default function BudgetsScreen() {
             ) : (
               <View style={styles.card}>
                 {budgets.map((budget) => {
+
+                  const isActive = budget.isActive;
+
                   const percentage = Math.min(
                     (budget.spent / budget.limitAmount) * 100,
                     100
@@ -128,7 +131,10 @@ export default function BudgetsScreen() {
                   return (
                     <Pressable
                       key={budget.budgetId}
-                      style={localStyles.budgetItem}
+                      style={[
+                        localStyles.budgetItem,
+                        !isActive && localStyles.inactiveBudget
+                      ]}
                       onPress={() =>
                         navigation.navigate('BudgetDetail', { budget })
                       }
@@ -144,7 +150,7 @@ export default function BudgetsScreen() {
                               localStyles.progressFill,
                               {
                                 width: `${percentage}%`,
-                                backgroundColor: getBudgetColor(percentage / 100, colors)
+                                backgroundColor: !isActive ? colors.muted : getBudgetColor(percentage / 100, colors)
                               },
                             ]}
                           />
@@ -220,6 +226,9 @@ function createLocalStyles(colors: ReturnType<typeof getColors>) {
     limit: {
       fontSize: 14,
       color: colors.muted,
+    },
+    inactiveBudget: {
+      opacity: 0.45,
     },
   });
 }

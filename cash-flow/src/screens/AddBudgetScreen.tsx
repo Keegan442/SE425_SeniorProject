@@ -12,6 +12,12 @@ import { addBudget } from '../api/budgetsApi';
 import { useCurrency } from '../theme/CurrencyContext';
 import { CURRENCIES } from '../utils/currency';
 
+type ApiCategory = {
+  category_id: number;
+  category_name: string;
+  category_type: 'income' | 'expense';
+};
+
 export default function AddBudgetScreen() {
   const { theme, toggleTheme } = useTheme();
   const { session } = useContext(AuthContext);
@@ -22,7 +28,7 @@ export default function AddBudgetScreen() {
 
   const [limit, setLimit] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -33,13 +39,19 @@ export default function AddBudgetScreen() {
 
   async function loadCategories() {
     if (!session?.userId) return;
+
     try {
       const cats = await getCategories(session.userId);
-      setCategories(cats);
 
-      if (cats.length > 0 && !selectedCategory) {
-        setSelectedCategory(String(cats[0].category_id));
+      
+      const expenseCategories = cats.filter((cat: ApiCategory) => cat.category_type === "expense");
+
+      setCategories(expenseCategories);
+
+      if (expenseCategories.length > 0 && !selectedCategory) {
+        setSelectedCategory(String(expenseCategories[0].category_id));
       }
+
     } catch (error) {
       console.error('Failed to load categories:', error);
       Alert.alert('Error', 'Failed to load categories. Please try again.');
@@ -123,14 +135,14 @@ export default function AddBudgetScreen() {
                   key={cat.category_id}
                   style={[
                     styles.chip,
-                    selectedCategory === cat.category_id && styles.chipSelected,
+                    selectedCategory === String(cat.category_id) && styles.chipSelected,
                   ]}
-                  onPress={() => setSelectedCategory(cat.category_id)}
+                  onPress={() => setSelectedCategory(String(cat.category_id))}
                 >
                   <Text
                     style={[
                       styles.chipText,
-                      selectedCategory === cat.category_id && styles.chipTextSelected,
+                      selectedCategory === String(cat.category_id) && styles.chipTextSelected,
                     ]}
                   >
                     {cat.category_name}

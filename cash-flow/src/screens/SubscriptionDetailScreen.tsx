@@ -128,15 +128,6 @@ export default function SubscriptionDetailScreen() {
 
         <View style={styles.formButtonContainer}>
           <Button
-            title={active ? 'Deactivate Subscription' : 'Activate Subscription'}
-            onPress={handleToggleActive}
-            loading={updating}
-            variant="outline"
-          />
-        </View>
-
-        <View style={styles.formButtonContainer}>
-          <Button
             title="Delete Subscription"
             onPress={handleDelete}
             disabled={deleting}
