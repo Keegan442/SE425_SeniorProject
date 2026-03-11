@@ -188,6 +188,7 @@ export default function DownloadsScreen() {
 
   async function handleExportYearPdf() {
     if (!session?.userId) return;
+    const subscriptions = await getSubscriptions(session.userId);
 
     try {
       setExporting('year-pdf');
@@ -195,15 +196,65 @@ export default function DownloadsScreen() {
       const months: Record<string, any> = {};
 
       for (let m = 1; m <= 12; m++) {
-        const monthKey = `${selectedYear}-${String(m).padStart(2, '0')}`;
-        const data = await getTransactions(session.userId, monthKey);
+        const key = `${selectedYear}-${String(m).padStart(2, '0')}`;
 
-        if (data.length > 0) {
-          months[monthKey] = data;
-        }
+        const transactions = await getTransactions(session.userId, key);
+        const cats = await getCategories(session.userId);
+
+        const mappedCats = cats.map((cat: any) => ({
+          id: String(cat.category_id),
+          name: cat.category_name
+        }));
+
+        mappedCats.push({ id: 'subscription', name: 'Subscriptions' });
+
+        const categoryMap: Record<string, 'income' | 'expense'> = {};
+        cats.forEach((cat: any) => {
+          categoryMap[String(cat.category_id)] = cat.category_type;
+        });
+
+        let income = 0;
+        const expenses: any[] = [];
+
+        transactions.forEach((t: any) => {
+          const type = categoryMap[String(t.category_id)];
+          const amount = Number(t.transaction_amount);
+
+          if (type === 'income') {
+            income += amount;
+          } else if (type === 'expense') {
+            expenses.push({
+              id: String(t.transaction_id),
+              categoryId: String(t.category_id),
+              amount,
+              note: t.transaction_name,
+              date: t.transaction_date,
+            });
+          }
+        });
+
+        subscriptions.forEach((sub: Subscription) => {
+          expenses.push({
+            id: `sub-${sub.id}-${key}`,
+            categoryId: 'subscription',
+            amount: sub.amountPerMonth,
+            note: sub.name + ' (Subscription)',
+            date: key + '-01'
+          });
+        });
+
+        months[key] = {
+          income,
+          expenses,
+          categories: mappedCats
+        };
       }
 
-      if (Object.keys(months).length === 0) {
+      const hasTransactions = Object.values(months).some(
+        (m) => m.expenses.length > 0 || m.income > 0
+      );
+
+      if (!hasTransactions) {
         Alert.alert('No Data', `No transactions found for ${selectedYear}.`);
         return;
       }
@@ -232,6 +283,7 @@ export default function DownloadsScreen() {
 
   async function handleExportYearCsv() {
     if (!session?.userId) return;
+    const subscriptions = await getSubscriptions(session.userId);
 
     try {
       setExporting('year-csv');
@@ -239,15 +291,65 @@ export default function DownloadsScreen() {
       const months: Record<string, any> = {};
 
       for (let m = 1; m <= 12; m++) {
-        const monthKey = `${selectedYear}-${String(m).padStart(2, '0')}`;
-        const data = await getTransactions(session.userId, monthKey);
+        const key = `${selectedYear}-${String(m).padStart(2, '0')}`;
 
-        if (data.length > 0) {
-          months[monthKey] = data;
-        }
+        const transactions = await getTransactions(session.userId, key);
+        const cats = await getCategories(session.userId);
+
+        const mappedCats = cats.map((cat: any) => ({
+          id: String(cat.category_id),
+          name: cat.category_name
+        }));
+
+        mappedCats.push({ id: 'subscription', name: 'Subscriptions' });
+
+        const categoryMap: Record<string, 'income' | 'expense'> = {};
+        cats.forEach((cat: any) => {
+          categoryMap[String(cat.category_id)] = cat.category_type;
+        });
+
+        let income = 0;
+        const expenses: any[] = [];
+
+        transactions.forEach((t: any) => {
+          const type = categoryMap[String(t.category_id)];
+          const amount = Number(t.transaction_amount);
+
+          if (type === 'income') {
+            income += amount;
+          } else if (type === 'expense') {
+            expenses.push({
+              id: String(t.transaction_id),
+              categoryId: String(t.category_id),
+              amount,
+              note: t.transaction_name,
+              date: t.transaction_date,
+            });
+          }
+        });
+
+        subscriptions.forEach((sub: Subscription) => {
+          expenses.push({
+            id: `sub-${sub.id}-${key}`,
+            categoryId: 'subscription',
+            amount: sub.amountPerMonth,
+            note: sub.name + ' (Subscription)',
+            date: key + '-01'
+          });
+        });
+
+        months[key] = {
+          income,
+          expenses,
+          categories: mappedCats
+        };
       }
 
-      if (Object.keys(months).length === 0) {
+      const hasTransactions = Object.values(months).some(
+        (m) => m.expenses.length > 0 || m.income > 0
+      );
+
+      if (!hasTransactions) {
         Alert.alert('No Data', `No transactions found for ${selectedYear}.`);
         return;
       }
